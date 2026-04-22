@@ -1,9 +1,9 @@
-# Architecture: Universal Problem-Solving Guide
+# Architecture: Problem Translation and Solution Sharing Platform
 
 ## 1) Goals and Scope
 
 Build a community website where users can:
-- Search programming problems by **OJ site + problem ID** (e.g., `Codeforces 1700A`, `AtCoder abc300_c`, `QOJ 1234`).
+- Search programming problems by **Online Judge (OJ) site + problem ID** (e.g., `Codeforces 1700A`, `AtCoder abc300_c`, `QOJ 1234`).
 - View existing community content for that problem:
   - **Translation** shown at the top.
   - **Solutions** shown below and collapsed/hidden by default.
@@ -32,7 +32,7 @@ Non-goals (phase 1):
 
 ### 2.2 Core entities
 - **Problem**
-  - `site` (enum/string): `codeforces | atcoder | qoj | ...`
+  - `site` (enum/string): `Codeforces | AtCoder | QOJ | ...`
   - `externalProblemId` (string)
   - Unique key: `(site, externalProblemId)`
 - **Translation**
@@ -54,6 +54,10 @@ Non-goals (phase 1):
 - If no translation exists, show “No translation yet” CTA for logged-in users.
 - Solutions render as a collapsed list by default; user can expand per item or all.
 - Sort default: highest score first, tie-breaker newest.
+
+### 2.4 Naming conventions
+- Application/API examples in this document use `camelCase`.
+- Database schema examples use `snake_case`.
 
 ---
 
