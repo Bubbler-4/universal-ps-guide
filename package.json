@@ -1,0 +1,27 @@
+{
+  "name": "universal-ps-guide",
+  "version": "1.0.0",
+  "description": "API implementation for universal-ps-guide",
+  "type": "module",
+  "main": "src/api/index.js",
+  "scripts": {
+    "lint": "node --check src/api/*.js src/api/**/*.js test/**/*.js",
+    "build": "node --check src/api/*.js src/api/**/*.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bubbler-4/universal-ps-guide.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bubbler-4/universal-ps-guide/issues"
+  },
+  "homepage": "https://github.com/Bubbler-4/universal-ps-guide#readme",
+  "devDependencies": {
+    "vitest": "^4.1.5"
+  }
+}
