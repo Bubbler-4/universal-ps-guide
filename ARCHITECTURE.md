@@ -133,12 +133,13 @@ Recommended endpoints (illustrative):
 - `POST /api/solutions`
 - `PATCH /api/solutions/:id`
 - `POST /api/votes`
-  - Body includes target type/id and direction.
+  - Body includes target type/id. Creates or keeps an upvote.
 - `DELETE /api/votes/:targetType/:targetId`
+  - Removes the caller's upvote.
 
 API principles:
 - Return stable typed payloads.
-- Include aggregate vote score and current user’s vote state.
+- Include aggregate upvote count and current user’s upvote state.
 - Return full solution list for the problem (expected small volume).
 
 ---
@@ -155,7 +156,7 @@ API principles:
 - `solutions`
   - foreign key: `problem_id`, `author_id`
 - `votes`
-  - fields: `user_id`, `target_type`, `target_id`, `value`
+  - fields: `user_id`, `target_type`, `target_id`
   - unique index: `(user_id, target_type, target_id)`
 
 ### 6.2 Audit/moderation-ready fields
