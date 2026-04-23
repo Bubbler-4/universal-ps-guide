@@ -86,7 +86,7 @@ Non-goals (phase 1):
 - Authorization checks in all mutation routes.
 
 ### 3.3 Data layer
-- Use Nitro's Database feature as the data access layer.
+- Use a SolidStart-compatible data access layer for Cloudflare D1, preferably via direct Cloudflare Workers D1 bindings inside SolidStart server routes or an ORM/query builder with explicit D1 support.
 - Primary deployment target: Cloudflare Workers with Cloudflare D1 (SQLite-compatible relational DB).
 - Keep schema and queries relational/portable so deployment can move to Postgres later with minimal changes.
 - Preserve DB-level constraints for uniqueness, vote integrity, and audit-ready fields.
@@ -212,7 +212,8 @@ API principles:
 
 ## 10) Performance and Scalability
 
-- Cache hot read endpoints (problem pages) with short TTL.
+- Cache hot read data for problem pages with short TTL **only for public/shared payloads** (problem metadata, translations, solutions, aggregate vote counts).
+- Do **not** put current-user vote state into publicly/shared-cached problem-page responses; fetch it separately from an authenticated endpoint, or mark those responses `private`/`no-store` and vary on auth/session as appropriate.
 - Add DB indexes for:
   - `(site, external_problem_id)`
   - `problem_id` on translations/solutions
@@ -224,8 +225,8 @@ API principles:
 ## 11) Deployment and Operations
 
 - Deploy SolidStart app to Cloudflare Workers in the default path.
-- Use Nitro Database with Cloudflare D1 in the default deployment path.
-- Keep migration path documented for switching Nitro Database backend to Postgres on dedicated infrastructure.
+- Use a Workers-compatible DB layer with Cloudflare D1 in the default deployment path.
+- Keep the data-access layer isolated so the migration path from D1 to Postgres on dedicated infrastructure is documented and actionable.
 - Environment variables for DB/auth/secrets.
 - Backups and restore runbook for DB.
 - Observability:
