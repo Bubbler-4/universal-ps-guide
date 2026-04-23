@@ -105,14 +105,14 @@ Non-goals (phase 1):
 - `/`
   - Search by site + problem ID.
   - Optional quick examples for each supported OJ.
-- `/problems/:site/:problemId`
+- `/problems/:site/:externalProblemId`
   - Problem header + canonical link info.
   - Translations block at top.
   - Solutions list (collapsed by default).
 
 ### 4.2 Authenticated pages
-- `/submit/translation/:site/:problemId`
-- `/submit/solution/:site/:problemId`
+- `/submit/translation/:site/:externalProblemId`
+- `/submit/solution/:site/:externalProblemId`
 - `/edit/translation/:id` and `/edit/solution/:id` (author-only in phase 1)
 
 ### 4.3 Optional pages (phase 2)
@@ -124,7 +124,7 @@ Non-goals (phase 1):
 ## 5) API Surface (SolidStart server routes)
 
 Recommended endpoints (illustrative):
-- `GET /api/problems/:site/:problemId`
+- `GET /api/problems/:site/:externalProblemId`
   - Returns problem details + translations + solutions.
 - `POST /api/problems/resolve`
   - Upsert/resolve problem by `(site, externalProblemId)`.
@@ -194,8 +194,8 @@ API principles:
 4. Vote interactions update score optimistically with rollback on error.
 
 ### 8.3 Search behavior
-- Exact lookup by `(site, problemId)` first.
-- Normalize IDs per site conventions (case sensitivity and separators) before query.
+- Exact lookup by `(site, externalProblemId)` first.
+- Canonicalize all input problem IDs by stripping non-alphanumeric characters and uppercasing letters before query.
 
 ---
 
