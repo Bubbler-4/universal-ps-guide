@@ -5,7 +5,7 @@
 Build a community website where users can:
 - Search programming problems by **Online Judge (OJ) site + problem ID** (e.g., `Codeforces 1700A`, `AtCoder abc300_c`, `QOJ 1234`).
 - View existing community content for that problem:
-  - **Translation** shown at the top.
+  - **Translations** shown in the top section for comparison.
   - **Solutions** shown below and collapsed/hidden by default.
 - Register/login to:
   - Submit a translation.
@@ -36,7 +36,7 @@ Non-goals (phase 1):
   - `externalProblemId` (string)
   - Unique key: `(site, externalProblemId)`
 - **Translation**
-  - One “primary” translation per problem in phase 1 (simplifies top display).
+  - Many per problem.
   - Authored by a user.
   - Version metadata for edits.
 - **Solution**
@@ -50,8 +50,9 @@ Non-goals (phase 1):
   - Auth identity + public profile basics.
 
 ### 2.3 Ranking/display rules
-- Translation section appears first.
+- Translations section appears first.
 - If no translation exists, show “No translation yet” CTA for logged-in users.
+- Translations are sorted by score (tie-breaker newest) so users can compare alternatives.
 - Solutions render as a collapsed list by default; user can expand per item or all.
 - Sort default: highest score first, tie-breaker newest.
 
@@ -85,11 +86,10 @@ Non-goals (phase 1):
 - Authorization checks in all mutation routes.
 
 ### 3.3 Data layer
-- Relational DB recommended (PostgreSQL) for:
-  - Strong uniqueness constraints
-  - Reliable vote integrity
-  - Future moderation/audit fields
-- ORM/query layer can be Prisma/Drizzle/Kysely (team choice).
+- Use Nitro's Database feature as the data access layer.
+- Primary deployment target: Cloudflare Workers with Cloudflare D1 (SQLite-compatible relational DB).
+- Keep schema and queries relational/portable so deployment can move to Postgres later with minimal changes.
+- Preserve DB-level constraints for uniqueness, vote integrity, and audit-ready fields.
 
 ### 3.4 Styling/UI system
 - TailwindCSS for utility-first layout and responsive design.
@@ -107,7 +107,7 @@ Non-goals (phase 1):
   - Optional quick examples for each supported OJ.
 - `/problems/:site/:problemId`
   - Problem header + canonical link info.
-  - Translation block at top.
+  - Translations block at top.
   - Solutions list (collapsed by default).
 
 ### 4.2 Authenticated pages
@@ -125,7 +125,7 @@ Non-goals (phase 1):
 
 Recommended endpoints (illustrative):
 - `GET /api/problems/:site/:problemId`
-  - Returns problem details + top translation + paginated solutions.
+  - Returns problem details + translations + solutions.
 - `POST /api/problems/resolve`
   - Upsert/resolve problem by `(site, externalProblemId)`.
 - `POST /api/translations`
@@ -139,7 +139,7 @@ Recommended endpoints (illustrative):
 API principles:
 - Return stable typed payloads.
 - Include aggregate vote score and current user’s vote state.
-- Use cursor pagination for solutions to scale.
+- Return full solution list for the problem (expected small volume).
 
 ---
 
@@ -151,7 +151,7 @@ API principles:
   - unique index: `(site, external_problem_id)`
 - `translations`
   - foreign key: `problem_id`, `author_id`
-  - optional unique constraint phase 1: one active translation per problem
+  - multiple translations allowed per problem
 - `solutions`
   - foreign key: `problem_id`, `author_id`
 - `votes`
@@ -183,8 +183,8 @@ API principles:
 
 ### 8.1 Translation lifecycle
 1. Problem page loaded.
-2. If translation exists, display at top.
-3. Logged-in users can submit new translation when missing (or propose replacement in future phases).
+2. If translations exist, display them in top section sorted by score.
+3. Logged-in users can submit additional translations for the same problem.
 
 ### 8.2 Solution lifecycle
 1. Solutions fetched with vote counts.
@@ -201,7 +201,8 @@ API principles:
 ## 9) Security, Abuse Prevention, and Data Quality
 
 - Input validation and output encoding for all user-generated content.
-- Markdown sanitization (if markdown enabled) to prevent XSS.
+- Use markdown content with raw HTML disabled.
+- Render math using KaTeX during markdown rendering.
 - Rate limit write actions (submissions/votes) by user/IP.
 - Basic anti-spam controls (cooldowns, optional CAPTCHA for suspicious activity).
 - Keep an immutable vote event log or change history for moderation/audit.
@@ -215,15 +216,15 @@ API principles:
   - `(site, external_problem_id)`
   - `problem_id` on translations/solutions
   - vote lookup indexes by target
-- Use pagination/infinite scroll for large solution sets.
 - Defer heavy rendering/content parsing where possible.
 
 ---
 
 ## 11) Deployment and Operations
 
-- Deploy SolidStart app on Node-compatible platform.
-- Managed PostgreSQL for persistence.
+- Deploy SolidStart app to Cloudflare Workers in the default path.
+- Use Nitro Database with Cloudflare D1 in the default deployment path.
+- Keep migration path documented for switching Nitro Database backend to Postgres on dedicated infrastructure.
 - Environment variables for DB/auth/secrets.
 - Backups and restore runbook for DB.
 - Observability:
@@ -237,7 +238,7 @@ API principles:
 
 ### Milestone 1 (MVP)
 - Search by site + problem ID
-- Problem page with translation at top
+- Problem page with translations at top
 - Solutions collapsed by default
 - Auth
 - Submit translation/solution
@@ -258,6 +259,6 @@ API principles:
 - Guest can search and view problem content.
 - Registered user can submit translation and solution.
 - Registered user can upvote others’ translation/solution.
-- Translation is displayed first on problem page.
+- Translations are displayed first on problem page.
 - Solutions are hidden/collapsed initially.
 - Stack aligns with Solid.js/SolidStart + TailwindCSS + Flowbite.
