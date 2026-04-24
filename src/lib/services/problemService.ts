@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { DrizzleD1Database } from "drizzle-orm/d1";
 import { problems, translations, solutions, votes } from "../../db/schema";
 import * as schema from "../../db/schema";
@@ -51,7 +51,13 @@ export async function getProblemWithContent(db: AnyDB, site: string, externalPro
     .where(eq(solutions.problemId, problem.id))
     .all();
 
-  const allVotes = await db.select().from(votes).all();
+  const translationIds = allTranslations.map((t: any) => t.id);
+  const solutionIds = allSolutions.map((s: any) => s.id);
+  const targetIds = [...translationIds, ...solutionIds];
+
+  const allVotes = targetIds.length > 0
+    ? await db.select().from(votes).where(inArray(votes.targetId, targetIds)).all()
+    : [];
 
   function getVoteCount(targetType: string, targetId: string) {
     return allVotes.filter((v: any) => v.targetType === targetType && v.targetId === targetId).length;
