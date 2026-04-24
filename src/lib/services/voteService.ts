@@ -18,5 +18,6 @@ export async function addVote(db: any, userId: string, targetType: string, targe
 export async function removeVote(db: any, userId: string, targetType: string, targetId: string) {
   await db
     .delete(votes)
-    .where(and(eq(votes.userId, userId), eq(votes.targetType, targetType), eq(votes.targetId, targetId)));
+    .where(and(eq(votes.userId, userId), eq(votes.targetType, targetType), eq(votes.targetId, targetId)))
+    .run();
 }
