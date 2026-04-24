@@ -68,7 +68,7 @@ export async function getProblemWithContent(db: AnyDB, site: string, externalPro
       voteCount: getVoteCount("translation", t.id),
       userVoted: getUserVote("translation", t.id),
     }))
-    .sort((a: any, b: any) => b.voteCount - a.voteCount || b.createdAt - a.createdAt);
+    .sort((a: any, b: any) => (b.voteCount - a.voteCount) || (b.createdAt - a.createdAt));
 
   const solutionsWithVotes = allSolutions
     .map((s: any) => ({
@@ -76,7 +76,7 @@ export async function getProblemWithContent(db: AnyDB, site: string, externalPro
       voteCount: getVoteCount("solution", s.id),
       userVoted: getUserVote("solution", s.id),
     }))
-    .sort((a: any, b: any) => b.voteCount - a.voteCount || b.createdAt - a.createdAt);
+    .sort((a: any, b: any) => (b.voteCount - a.voteCount) || (b.createdAt - a.createdAt));
 
   return { ...problem, translations: translationsWithVotes, solutions: solutionsWithVotes };
 }
