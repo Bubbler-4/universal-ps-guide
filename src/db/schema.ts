@@ -11,12 +11,16 @@ export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
+  status: text("status", { enum: ["active", "hidden", "flagged"] })
+    .notNull()
+    .default("active"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
   updatedAt: text("updated_at")
     .notNull()
     .default(sql`(datetime('now'))`),
+  deletedAt: text("deleted_at"),
 });
 
 export const problems = sqliteTable(
@@ -25,12 +29,16 @@ export const problems = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     site: text("site").notNull(),
     externalProblemId: text("external_problem_id").notNull(),
+    status: text("status", { enum: ["active", "hidden", "flagged"] })
+      .notNull()
+      .default("active"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
+    deletedAt: text("deleted_at"),
   },
   (t) => [uniqueIndex("problems_site_external_problem_id_idx").on(t.site, t.externalProblemId)]
 );

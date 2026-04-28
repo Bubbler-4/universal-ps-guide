@@ -1,18 +1,7 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { getDb } from "~/db";
 import { problems, translations } from "~/db/schema";
 import { eq, and, isNull, asc } from "drizzle-orm";
-
-function getD1(event: APIEvent) {
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: { DB?: unknown } };
-  };
-  const d1 = ctx.cloudflare?.env?.DB;
-  if (!d1) {
-    throw new Error("D1 database binding not found in event context");
-  }
-  return getDb(d1 as never);
-}
+import { getD1 } from "~/server/db";
 
 /**
  * GET /api/problems/:site/:externalProblemId

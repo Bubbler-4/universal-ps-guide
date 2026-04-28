@@ -1,20 +1,7 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { getDb } from "~/db";
 import { problems, translations } from "~/db/schema";
 import { eq, and, isNull, asc } from "drizzle-orm";
-
-function getD1(event: APIEvent) {
-  // In Cloudflare Workers (Nitro cloudflare_module preset),
-  // D1 bindings are available in event.nativeEvent.context.cloudflare.env
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: { DB?: unknown } };
-  };
-  const d1 = ctx.cloudflare?.env?.DB;
-  if (!d1) {
-    throw new Error("D1 database binding not found in event context");
-  }
-  return getDb(d1 as never);
-}
+import { getD1 } from "~/server/db";
 
 /**
  * GET /api/translations?site=...&externalProblemId=...
@@ -22,8 +9,8 @@ function getD1(event: APIEvent) {
  */
 export async function GET(event: APIEvent) {
   const url = new URL(event.request.url);
-  const site = url.searchParams.get("site");
-  const externalProblemId = url.searchParams.get("externalProblemId");
+  const site = url.searchParams.get("site")?.trim() ?? null;
+  const externalProblemId = url.searchParams.get("externalProblemId")?.trim() ?? null;
 
   if (!site || !externalProblemId) {
     return new Response(
