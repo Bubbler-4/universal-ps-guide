@@ -128,7 +128,7 @@ export async function POST(event: APIEvent) {
   if (!inserted) {
     return new Response(
       JSON.stringify({
-        error: "A translation from this author already exists for this problem. Use PATCH to edit it.",
+        error: "A translation from this author already exists for this problem.",
       }),
       { status: 409, headers: { "Content-Type": "application/json" } }
     );

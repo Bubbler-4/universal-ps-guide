@@ -106,7 +106,7 @@ export function makeRequestEvent(url: string, body?: unknown): TestApiEvent {
             headers: { "content-type": "application/json" },
             body: JSON.stringify(body),
           })
-        : new Request(url),
+        : new Request(url, { method: "GET" }),
     nativeEvent: { context: {} },
   };
 }
