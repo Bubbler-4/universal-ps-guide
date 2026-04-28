@@ -1,7 +1,7 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { getDb } from "~/db";
 import { problems, translations } from "~/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, asc } from "drizzle-orm";
 
 function getD1(event: APIEvent) {
   const ctx = event.nativeEvent.context as {
@@ -55,7 +55,7 @@ export async function GET(event: APIEvent) {
         isNull(translations.deletedAt)
       )
     )
-    .orderBy(translations.createdAt)
+    .orderBy(asc(translations.createdAt))
     .all();
 
   return new Response(JSON.stringify({ problem, translations: rows }), {
