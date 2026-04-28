@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS translations (
   status TEXT NOT NULL DEFAULT 'active',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  deleted_at TEXT
+  deleted_at TEXT,
+  UNIQUE (problem_id, author_id)
 );
 
 CREATE INDEX IF NOT EXISTS translations_problem_id_idx ON translations (problem_id);
@@ -79,27 +80,34 @@ export function seedTranslations(
   }
 }
 
+export type TestApiEvent = {
+  params: Record<string, string>;
+  request: Request;
+  nativeEvent: { context: Record<string, unknown> };
+};
+
 /** Build a minimal APIEvent-like object for GET requests with route params. */
-export function makeParamEvent(params: Record<string, string>): object {
+export function makeParamEvent(params: Record<string, string>): TestApiEvent {
   return {
     params,
-    request: {
-      url: "http://localhost/",
-      json: () => Promise.resolve(null),
-    },
+    request: new Request("http://localhost/"),
     nativeEvent: { context: {} },
   };
 }
 
-/** Build a minimal APIEvent-like object for requests with a URL and optional body. */
-export function makeRequestEvent(url: string, body?: unknown): object {
+/** Build a minimal APIEvent-like object for requests with a URL and optional JSON body. */
+export function makeRequestEvent(url: string, body?: unknown): TestApiEvent {
   return {
     params: {},
-    request: {
-      url,
-      json: () =>
-        body !== undefined ? Promise.resolve(body) : Promise.reject(new SyntaxError("No body")),
-    },
+    request:
+      body !== undefined
+        ? new Request(url, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        : new Request(url),
     nativeEvent: { context: {} },
   };
 }
+

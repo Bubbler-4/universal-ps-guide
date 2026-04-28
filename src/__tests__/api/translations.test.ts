@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, seedTranslations, type TestDb } from "./helpers";
+import { createTestDb, makeRequestEvent, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so handlers use the in-memory Drizzle instance.
@@ -81,15 +81,14 @@ describe("GET /api/translations", () => {
   });
 
   it("excludes non-active translations", async () => {
-    sqlite.exec(`INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')`);
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
     sqlite.exec(
       `INSERT INTO problems (site, external_problem_id) VALUES ('atcoder', 'abc300_c')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
-    const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
-      { problemId, userId, content: "Active", status: "active" },
-      { problemId, userId, content: "Hidden", status: "hidden" },
+      { problemId, userId: 1, content: "Active", status: "active" },
+      { problemId, userId: 2, content: "Hidden", status: "hidden" },
     ]);
 
     const event = makeRequestEvent(
@@ -102,15 +101,14 @@ describe("GET /api/translations", () => {
   });
 
   it("excludes soft-deleted translations", async () => {
-    sqlite.exec(`INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')`);
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
     sqlite.exec(
       `INSERT INTO problems (site, external_problem_id) VALUES ('atcoder', 'abc300_c')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
-    const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
-      { problemId, userId, content: "Live", deletedAt: null },
-      { problemId, userId, content: "Deleted", deletedAt: "2025-01-01 00:00:00" },
+      { problemId, userId: 1, content: "Live", deletedAt: null },
+      { problemId, userId: 2, content: "Deleted", deletedAt: "2025-01-01 00:00:00" },
     ]);
 
     const event = makeRequestEvent(
@@ -123,15 +121,14 @@ describe("GET /api/translations", () => {
   });
 
   it("returns translations ordered by createdAt ascending", async () => {
-    sqlite.exec(`INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')`);
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
     sqlite.exec(
       `INSERT INTO problems (site, external_problem_id) VALUES ('atcoder', 'abc300_c')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
-    const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
-      { problemId, userId, content: "First", createdAt: "2024-03-01 00:00:00" },
-      { problemId, userId, content: "Second", createdAt: "2024-06-01 00:00:00" },
+      { problemId, userId: 1, content: "First", createdAt: "2024-03-01 00:00:00" },
+      { problemId, userId: 2, content: "Second", createdAt: "2024-06-01 00:00:00" },
     ]);
 
     const event = makeRequestEvent(
@@ -157,7 +154,7 @@ describe("POST /api/translations", () => {
     sqlite.close();
   });
 
-  it("returns 400 for invalid (non-JSON) body", async () => {
+  it("returns 400 when request has no body (json() throws)", async () => {
     const event = makeRequestEvent("http://localhost/api/translations");
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -306,5 +303,34 @@ describe("POST /api/translations", () => {
       )
       .get();
     expect(problem).toBeTruthy();
+  });
+
+  it("returns 409 and preserves first content when same author POSTs again for same problem", async () => {
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (7, 'eve', 'eve@example.com')`);
+
+    const firstEvent = makeRequestEvent("http://localhost/api/translations", {
+      site: "codeforces",
+      externalProblemId: "800A",
+      authorId: 7,
+      content: "Original translation",
+    });
+    const firstRes = await POST(firstEvent as unknown as APIEvent);
+    expect(firstRes.status).toBe(201);
+
+    const secondEvent = makeRequestEvent("http://localhost/api/translations", {
+      site: "codeforces",
+      externalProblemId: "800A",
+      authorId: 7,
+      content: "Replacement translation",
+    });
+    const secondRes = await POST(secondEvent as unknown as APIEvent);
+    expect(secondRes.status).toBe(409);
+
+    // Content in DB must still be the first one
+    const rows = sqlite
+      .prepare("SELECT content FROM translations WHERE author_id = 7")
+      .all() as Array<{ content: string }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].content).toBe("Original translation");
   });
 });

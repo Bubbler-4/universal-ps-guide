@@ -121,8 +121,18 @@ export async function POST(event: APIEvent) {
   const inserted = await db
     .insert(translations)
     .values({ problemId: problem.id, authorId, content: content.trim() })
+    .onConflictDoNothing()
     .returning()
     .get();
+
+  if (!inserted) {
+    return new Response(
+      JSON.stringify({
+        error: "A translation from this author already exists for this problem. Use PATCH to edit it.",
+      }),
+      { status: 409, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   return new Response(JSON.stringify({ translation: inserted }), {
     status: 201,

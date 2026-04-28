@@ -65,7 +65,10 @@ export const translations = sqliteTable(
       .default(sql`(datetime('now'))`),
     deletedAt: text("deleted_at"),
   },
-  (t) => [index("translations_problem_id_idx").on(t.problemId)]
+  (t) => [
+    index("translations_problem_id_idx").on(t.problemId),
+    uniqueIndex("translations_problem_id_author_id_idx").on(t.problemId, t.authorId),
+  ]
 );
 
 export type User = typeof users.$inferSelect;
