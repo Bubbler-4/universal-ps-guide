@@ -6,8 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "universal-ps-guide"
-# Replace with your actual D1 database ID from `wrangler d1 create universal-ps-guide`
-database_id = "your-d1-database-id"
+database_id = "323130c2-329a-4eea-b2af-e1ead7239c7e"
 
 [vars]
 # Add application-level environment variables here
