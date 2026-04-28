@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeParamEvent, type TestDb } from "./helpers";
+import { createTestDb, makeParamEvent, seedTranslations, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so GET() uses the in-memory Drizzle instance.
@@ -52,11 +52,10 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, created_at) VALUES
-        (${problemId}, ${userId}, 'Translation A', '2024-01-01 00:00:00'),
-        (${problemId}, ${userId}, 'Translation B', '2024-01-02 00:00:00')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "Translation A", createdAt: "2024-01-01 00:00:00" },
+      { problemId, userId, content: "Translation B", createdAt: "2024-01-02 00:00:00" },
+    ]);
 
     const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
     const res = await GET(event as APIEvent);
@@ -74,12 +73,11 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, status) VALUES
-        (${problemId}, ${userId}, 'Active', 'active'),
-        (${problemId}, ${userId}, 'Hidden', 'hidden'),
-        (${problemId}, ${userId}, 'Flagged', 'flagged')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "Active", status: "active" },
+      { problemId, userId, content: "Hidden", status: "hidden" },
+      { problemId, userId, content: "Flagged", status: "flagged" },
+    ]);
 
     const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
     const res = await GET(event as APIEvent);
@@ -95,11 +93,10 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, deleted_at) VALUES
-        (${problemId}, ${userId}, 'Active', NULL),
-        (${problemId}, ${userId}, 'Deleted', '2024-06-01 00:00:00')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "Active", deletedAt: null },
+      { problemId, userId, content: "Deleted", deletedAt: "2024-06-01 00:00:00" },
+    ]);
 
     const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
     const res = await GET(event as APIEvent);

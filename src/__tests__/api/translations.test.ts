@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, type TestDb } from "./helpers";
+import { createTestDb, makeRequestEvent, seedTranslations, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so handlers use the in-memory Drizzle instance.
@@ -68,10 +68,7 @@ describe("GET /api/translations", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content) VALUES
-        (${problemId}, ${userId}, 'Hello')`
-    );
+    seedTranslations(sqlite, [{ problemId, userId, content: "Hello" }]);
 
     const event = makeRequestEvent(
       "http://localhost/api/translations?site=atcoder&externalProblemId=abc300_c"
@@ -90,11 +87,10 @@ describe("GET /api/translations", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, status) VALUES
-        (${problemId}, ${userId}, 'Active', 'active'),
-        (${problemId}, ${userId}, 'Hidden', 'hidden')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "Active", status: "active" },
+      { problemId, userId, content: "Hidden", status: "hidden" },
+    ]);
 
     const event = makeRequestEvent(
       "http://localhost/api/translations?site=atcoder&externalProblemId=abc300_c"
@@ -112,11 +108,10 @@ describe("GET /api/translations", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, deleted_at) VALUES
-        (${problemId}, ${userId}, 'Live', NULL),
-        (${problemId}, ${userId}, 'Deleted', '2025-01-01 00:00:00')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "Live", deletedAt: null },
+      { problemId, userId, content: "Deleted", deletedAt: "2025-01-01 00:00:00" },
+    ]);
 
     const event = makeRequestEvent(
       "http://localhost/api/translations?site=atcoder&externalProblemId=abc300_c"
@@ -134,11 +129,10 @@ describe("GET /api/translations", () => {
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
-    sqlite.exec(
-      `INSERT INTO translations (problem_id, author_id, content, created_at) VALUES
-        (${problemId}, ${userId}, 'First', '2024-03-01 00:00:00'),
-        (${problemId}, ${userId}, 'Second', '2024-06-01 00:00:00')`
-    );
+    seedTranslations(sqlite, [
+      { problemId, userId, content: "First", createdAt: "2024-03-01 00:00:00" },
+      { problemId, userId, content: "Second", createdAt: "2024-06-01 00:00:00" },
+    ]);
 
     const event = makeRequestEvent(
       "http://localhost/api/translations?site=atcoder&externalProblemId=abc300_c"

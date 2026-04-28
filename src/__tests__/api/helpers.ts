@@ -51,6 +51,34 @@ export function createTestDb(): { db: TestDb; sqlite: Database.Database } {
   return { db, sqlite };
 }
 
+/** Seed one or more translation rows using parameterized statements (avoids SQL injection). */
+export function seedTranslations(
+  sqlite: Database.Database,
+  rows: Array<{
+    problemId: number;
+    userId: number;
+    content: string;
+    status?: string;
+    createdAt?: string;
+    deletedAt?: string | null;
+  }>
+): void {
+  const stmt = sqlite.prepare(
+    `INSERT INTO translations (problem_id, author_id, content, status, created_at, deleted_at)
+     VALUES (?, ?, ?, ?, COALESCE(?, datetime('now')), ?)`
+  );
+  for (const row of rows) {
+    stmt.run(
+      row.problemId,
+      row.userId,
+      row.content,
+      row.status ?? "active",
+      row.createdAt ?? null,
+      row.deletedAt ?? null
+    );
+  }
+}
+
 /** Build a minimal APIEvent-like object for GET requests with route params. */
 export function makeParamEvent(params: Record<string, string>): object {
   return {
