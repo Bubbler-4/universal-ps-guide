@@ -6,7 +6,8 @@ import { getCloudflareEnv } from "~/server/env";
 
 async function checkSession() {
   "use server";
-  const event = getRequestEvent()!;
+  const event = getRequestEvent();
+  if (!event) return null;
   const env = getCloudflareEnv(event);
   const session = await getServerSession(event.request, env);
   if (!session) {

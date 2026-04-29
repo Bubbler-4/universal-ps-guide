@@ -9,7 +9,8 @@ import "./app.css";
 
 async function fetchSession() {
   "use server";
-  const event = getRequestEvent()!;
+  const event = getRequestEvent();
+  if (!event) return null;
   const env = getCloudflareEnv(event);
   return getServerSession(event.request, env);
 }
