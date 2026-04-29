@@ -92,7 +92,7 @@ export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
-  const secret = env.AUTH_SECRET ?? "";
+  const secret = env.AUTH_SECRET?.trim() ?? "";
   if (!secret) return null;
 
   const token = await getToken({
