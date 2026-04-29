@@ -5,6 +5,7 @@ import * as schema from "~/db/schema";
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  github_id TEXT UNIQUE,
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
   status TEXT NOT NULL DEFAULT 'active',
