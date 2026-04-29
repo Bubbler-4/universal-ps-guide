@@ -9,6 +9,7 @@ import { sql } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  githubId: text("github_id").unique(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   status: text("status", { enum: ["active", "hidden", "flagged"] })

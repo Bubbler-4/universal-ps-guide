@@ -11,4 +11,9 @@ database_name = "universal-ps-guide"
 database_id = "00000000-0000-0000-0000-000000000000"
 
 [vars]
-# Add application-level environment variables here
+# Auth.js secret — generate with: npx auth secret
+# AUTH_SECRET = "replace-with-a-random-32-char-secret"
+
+# GitHub OAuth app credentials (set as Wrangler secrets in production)
+# Run: wrangler secret put GITHUB_CLIENT_ID
+#      wrangler secret put GITHUB_CLIENT_SECRET
