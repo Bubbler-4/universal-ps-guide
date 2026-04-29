@@ -10,6 +10,6 @@ export function getCloudflareEnv(event: {
 }): CloudflareEnv {
   const ctx = event.nativeEvent.context as {
     cloudflare?: { env?: CloudflareEnv };
-  };
+  }; console.log(ctx);
   return ctx.cloudflare?.env ?? {};
 }
