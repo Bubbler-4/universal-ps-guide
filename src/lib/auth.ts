@@ -12,6 +12,7 @@ export interface CloudflareEnv {
 }
 
 export function createAuthConfig(env: CloudflareEnv): SolidAuthConfig {
+  console.log('createAuthConfig', JSON.stringify(env));
   const authSecret = env.AUTH_SECRET?.trim();
   const githubId = env.AUTH_GITHUB_ID?.trim();
   const githubSecret = env.AUTH_GITHUB_SECRET?.trim();
@@ -91,6 +92,7 @@ export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
+  console.log('getServerSession', JSON.stringify(request), JSON.stringify(env));
   if (
     !env.AUTH_SECRET?.trim() ||
     !env.AUTH_GITHUB_ID?.trim() ||
