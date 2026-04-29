@@ -25,10 +25,22 @@ export default function TopBar(props: TopBarProps) {
               </A>
             }
           >
-            <span class="text-gray-300">
-              Signed in as{" "}
-              <span class="font-semibold text-white">{props.session?.username}</span>
-            </span>
+            <Show
+              when={props.session?.needsUsername}
+              fallback={
+                <span class="text-gray-300">
+                  Signed in as{" "}
+                  <span class="font-semibold text-white">{props.session?.username}</span>
+                </span>
+              }
+            >
+              <A
+                href="/setup-username"
+                class="text-blue-300 hover:text-blue-200 font-medium transition-colors"
+              >
+                Finish setup
+              </A>
+            </Show>
             <a
               href="/api/auth/signout"
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"

@@ -2,15 +2,12 @@ import { createResource, createSignal, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { redirect, useNavigate } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
-import type { CloudflareEnv } from "~/lib/auth";
+import { getCloudflareEnv } from "~/server/env";
 
 async function checkSession() {
   "use server";
   const event = getRequestEvent()!;
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: CloudflareEnv };
-  };
-  const env: CloudflareEnv = ctx.cloudflare?.env ?? {};
+  const env = getCloudflareEnv(event);
   const session = await getServerSession(event.request, env);
   if (!session) {
     throw redirect("/login");

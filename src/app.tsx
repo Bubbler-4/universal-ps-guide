@@ -3,17 +3,14 @@ import { FileRoutes } from "@solidjs/start/router";
 import { createResource, Suspense } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { getServerSession } from "~/lib/auth";
-import type { CloudflareEnv } from "~/lib/auth";
+import { getCloudflareEnv } from "~/server/env";
 import TopBar from "~/components/TopBar";
 import "./app.css";
 
 async function fetchSession() {
   "use server";
   const event = getRequestEvent()!;
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: CloudflareEnv };
-  };
-  const env: CloudflareEnv = ctx.cloudflare?.env ?? {};
+  const env = getCloudflareEnv(event);
   return getServerSession(event.request, env);
 }
 

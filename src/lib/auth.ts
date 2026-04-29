@@ -13,14 +13,28 @@ export interface CloudflareEnv {
 }
 
 export function createAuthConfig(env: CloudflareEnv): AuthConfig {
+  if (!env.AUTH_SECRET?.trim()) {
+    throw new Error("Missing required auth environment variable: AUTH_SECRET");
+  }
+  if (!env.GITHUB_CLIENT_ID?.trim()) {
+    throw new Error(
+      "Missing required auth environment variable: GITHUB_CLIENT_ID"
+    );
+  }
+  if (!env.GITHUB_CLIENT_SECRET?.trim()) {
+    throw new Error(
+      "Missing required auth environment variable: GITHUB_CLIENT_SECRET"
+    );
+  }
+
   return {
     providers: [
       GitHub({
-        clientId: env.GITHUB_CLIENT_ID ?? "",
-        clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
       }),
     ],
-    secret: env.AUTH_SECRET ?? "",
+    secret: env.AUTH_SECRET,
     trustHost: true,
     basePath: "/api/auth",
     callbacks: {

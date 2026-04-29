@@ -1,18 +1,10 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { getServerSession } from "~/lib/auth";
-import type { CloudflareEnv } from "~/lib/auth";
+import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
 import { users } from "~/db/schema";
-import { eq } from "drizzle-orm";
 
 const USERNAME_RE = /^[a-zA-Z_-]{3,30}$/;
-
-function getCloudflareEnv(event: APIEvent): CloudflareEnv {
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: CloudflareEnv };
-  };
-  return ctx.cloudflare?.env ?? {};
-}
 
 /**
  * POST /api/auth/setup-username
@@ -28,6 +20,15 @@ export async function POST(event: APIEvent): Promise<Response> {
   }
   if (!session.needsUsername) {
     return Response.json({ error: "Username already set" }, { status: 409 });
+  }
+  if (!session.email) {
+    return Response.json(
+      {
+        error:
+          "Your GitHub account does not have a verified email. Please add one in GitHub settings and try again.",
+      },
+      { status: 400 }
+    );
   }
 
   const body = await event.request.json().catch(() => null);
@@ -53,24 +54,24 @@ export async function POST(event: APIEvent): Promise<Response> {
 
   const db = getDb(env.DB as never);
 
-  const existing = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.username, username))
-    .get();
-
-  if (existing) {
-    return Response.json({ error: "Username already taken" }, { status: 409 });
-  }
-
-  await db
+  // Use INSERT ... ON CONFLICT DO NOTHING to avoid a TOCTOU race between a
+  // separate SELECT and INSERT. If another request inserts the same username
+  // concurrently, the DB unique constraint prevents a duplicate and .get()
+  // returns undefined, which we surface as a 409.
+  const inserted = await db
     .insert(users)
     .values({
       githubId: session.githubId,
       username,
       email: session.email,
     })
-    .run();
+    .onConflictDoNothing()
+    .returning()
+    .get();
+
+  if (!inserted) {
+    return Response.json({ error: "Username already taken" }, { status: 409 });
+  }
 
   return Response.json({ ok: true });
 }
