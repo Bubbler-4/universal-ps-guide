@@ -92,8 +92,8 @@ export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
-  const secret = env.AUTH_SECRET?.trim() ?? "";
-  if (!secret) return null;
+  const secret = env.AUTH_SECRET?.trim() ?? ""; console.log('lib/auth.ts', 95);
+  if (!secret) return null; console.log('lib/auth.ts', 96);
 
   const token = await getToken({
     req: request,
@@ -102,29 +102,29 @@ export async function getServerSession(
     cookieName: request.url.startsWith("https://")
       ? "__Secure-authjs.session-token"
       : "authjs.session-token",
-  });
+  }); console.log('lib/auth.ts', 105);
 
-  if (!token) return null;
+  if (!token) return null; console.log('lib/auth.ts', 107);
 
-  const githubId = token.githubId as string | undefined;
-  if (!githubId) return null;
+  const githubId = token.githubId as string | undefined; console.log('lib/auth.ts', 109);
+  if (!githubId) return null; console.log('lib/auth.ts', 110);
 
-  let username: string | null = null;
-  let dbUserId: number | null = null;
+  let username: string | null = null; console.log('lib/auth.ts', 112);
+  let dbUserId: number | null = null; console.log('lib/auth.ts', 113);
 
-  if (env.DB) {
-    const db = getDb(env.DB as never);
+  if (env.DB) { console.log('lib/auth.ts', 115);
+    const db = getDb(env.DB as never); console.log('lib/auth.ts', 116);
     const user = await db
       .select({ id: users.id, username: users.username })
       .from(users)
       .where(eq(users.githubId, githubId))
-      .get();
-    if (user) {
-      username = user.username;
-      dbUserId = user.id;
+      .get(); console.log('lib/auth.ts', 121);
+    if (user) { console.log('lib/auth.ts', 122);
+      username = user.username; console.log('lib/auth.ts', 123);
+      dbUserId = user.id; console.log('lib/auth.ts', 124);
     }
   }
-
+  console.log('lib/auth.ts', 127);
   return {
     githubId,
     email: String(token.email ?? ""),
