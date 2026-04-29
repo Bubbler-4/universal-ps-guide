@@ -6,9 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "universal-ps-guide"
-# Override this placeholder with the correct D1 database ID for each environment.
-# Run `wrangler d1 create universal-ps-guide` to create the database and get its ID.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "323130c2-329a-4eea-b2af-e1ead7239c7e"
 migrations_dir = "drizzle"
 
 [vars]
