@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@auth/core": "^0.41.2",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "2.0.0-alpha.2",
     "@solidjs/vite-plugin-nitro-2": "^0.1.0",
