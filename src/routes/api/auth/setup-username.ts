@@ -41,7 +41,7 @@ export async function POST(event: APIEvent): Promise<Response> {
     return Response.json(
       {
         error:
-          "Username must be 3–30 characters and contain only letters, underscores, or hyphens.",
+          "Username must be 3-30 characters and contain only letters, underscores, or hyphens.",
       },
       { status: 400 }
     );
