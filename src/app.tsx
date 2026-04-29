@@ -9,9 +9,9 @@ import "./app.css";
 
 async function fetchSession() {
   "use server";
-  const event = getRequestEvent(); console.log('app.tsx', 12);
-  if (!event) return null; console.log('app.tsx', 13);
-  const env = getCloudflareEnv(event); console.log('app.tsx', 14);
+  const event = getRequestEvent();
+  if (!event) return null;
+  const env = getCloudflareEnv(event);
   return getServerSession(event.request, env);
 }
 
