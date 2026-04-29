@@ -91,7 +91,13 @@ export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
-  if (!env.AUTH_SECRET?.trim()) return null;
+  if (
+    !env.AUTH_SECRET?.trim() ||
+    !env.AUTH_GITHUB_ID?.trim() ||
+    !env.AUTH_GITHUB_SECRET?.trim()
+  ) {
+    return null;
+  }
 
   const config = createAuthConfig(env);
   const session = await getSession(request, config);

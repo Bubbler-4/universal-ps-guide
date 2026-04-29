@@ -6,8 +6,8 @@ async function handler(event: APIEvent): Promise<Response> {
   const env = getCloudflareEnv(event);
   const config = createAuthConfig(env);
   const { GET, POST } = SolidAuth(config);
-  if (event.request.method === "POST") return POST(event) as Promise<Response>;
-  return GET(event) as Promise<Response>;
+  const res = await (event.request.method === "POST" ? POST(event) : GET(event));
+  return res ?? new Response(null, { status: 404 });
 }
 
 export const GET = handler;
