@@ -1,6 +1,5 @@
-import { Auth, type AuthConfig } from "@auth/core";
+import { SolidAuth, getSession, type SolidAuthConfig } from "@auth/solid-start";
 import GitHub from "@auth/core/providers/github";
-import { getToken } from "@auth/core/jwt";
 import { getDb } from "~/db";
 import { users } from "~/db/schema";
 import { eq } from "drizzle-orm";
@@ -12,7 +11,7 @@ export interface CloudflareEnv {
   AUTH_GITHUB_SECRET?: string;
 }
 
-export function createAuthConfig(env: CloudflareEnv): AuthConfig {
+export function createAuthConfig(env: CloudflareEnv): SolidAuthConfig {
   const authSecret = env.AUTH_SECRET?.trim();
   const githubId = env.AUTH_GITHUB_ID?.trim();
   const githubSecret = env.AUTH_GITHUB_SECRET?.trim();
@@ -85,28 +84,25 @@ export interface AppSession {
 }
 
 /**
- * Reads the auth.js JWT from the request and returns the current session,
+ * Reads the auth.js session from the request and returns the current session,
  * or null if the user is not signed in.
  */
 export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
-  const secret = env.AUTH_SECRET?.trim() ?? "";
-  if (!secret) return null;
+  if (
+    !env.AUTH_SECRET?.trim() ||
+    !env.AUTH_GITHUB_ID?.trim() ||
+    !env.AUTH_GITHUB_SECRET?.trim()
+  ) {
+    return null;
+  }
 
-  const token = await getToken({
-    req: request,
-    secret,
-    secureCookie: request.url.startsWith("https://"),
-    cookieName: request.url.startsWith("https://")
-      ? "__Secure-authjs.session-token"
-      : "authjs.session-token",
-  });
+  const config = createAuthConfig(env);
+  const session = await getSession(request, config);
 
-  if (!token) return null;
-
-  const githubId = token.githubId as string | undefined;
+  const githubId = session?.user?.githubId;
   if (!githubId) return null;
 
   let username: string | null = null;
@@ -127,13 +123,13 @@ export async function getServerSession(
 
   return {
     githubId,
-    email: String(token.email ?? ""),
-    name: String(token.name ?? ""),
-    image: String(token.picture ?? ""),
+    email: String(session.user?.email ?? ""),
+    name: String(session.user?.name ?? ""),
+    image: String(session.user?.image ?? ""),
     username,
     dbUserId,
     needsUsername: !username,
   };
 }
 
-export { Auth };
+export { SolidAuth };
