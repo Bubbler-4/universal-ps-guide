@@ -1,2 +1,2 @@
-# universal-ps-guide
+# Universal PS Guide
 
