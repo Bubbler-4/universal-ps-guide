@@ -8,30 +8,30 @@ import { eq } from "drizzle-orm";
 export interface CloudflareEnv {
   DB?: unknown;
   AUTH_SECRET?: string;
-  GITHUB_CLIENT_ID?: string;
-  GITHUB_CLIENT_SECRET?: string;
+  AUTH_GITHUB_ID?: string;
+  AUTH_GITHUB_SECRET?: string;
 }
 
 export function createAuthConfig(env: CloudflareEnv): AuthConfig {
   if (!env.AUTH_SECRET?.trim()) {
     throw new Error("Missing required auth environment variable: AUTH_SECRET");
   }
-  if (!env.GITHUB_CLIENT_ID?.trim()) {
+  if (!env.AUTH_GITHUB_ID?.trim()) {
     throw new Error(
-      "Missing required auth environment variable: GITHUB_CLIENT_ID"
+      "Missing required auth environment variable: AUTH_GITHUB_ID"
     );
   }
-  if (!env.GITHUB_CLIENT_SECRET?.trim()) {
+  if (!env.AUTH_GITHUB_SECRET?.trim()) {
     throw new Error(
-      "Missing required auth environment variable: GITHUB_CLIENT_SECRET"
+      "Missing required auth environment variable: AUTH_GITHUB_SECRET"
     );
   }
 
   return {
     providers: [
       GitHub({
-        clientId: env.GITHUB_CLIENT_ID,
-        clientSecret: env.GITHUB_CLIENT_SECRET,
+        clientId: env.AUTH_GITHUB_ID,
+        clientSecret: env.AUTH_GITHUB_SECRET,
       }),
     ],
     secret: env.AUTH_SECRET,
