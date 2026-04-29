@@ -8,6 +8,7 @@ import type { CloudflareEnv } from "~/lib/auth";
 export function getCloudflareEnv(event: {
   nativeEvent: { context: unknown };
 }): CloudflareEnv {
+  console.log('context keys:', Object.keys(event.nativeEvent.context as object));
   const ctx = event.nativeEvent.context as {
     cloudflare?: { env?: CloudflareEnv };
   };
