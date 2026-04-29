@@ -12,11 +12,32 @@ declare global {
 
 /**
  * Returns the Cloudflare environment bindings for the current request.
- * Reads from globalThis.__env__, which is populated by Nitro's
- * cloudflare_module runtime on every request.
+ *
+ * Resolution order:
+ * 1. globalThis.__env__ — set by Nitro's cloudflare_module runtime before the
+ *    renderer is invoked (production on Cloudflare Workers).
+ * 2. event.nativeEvent.context._platform.cloudflare.env — the Nitro H3 event
+ *    context path used by some presets (e.g. local wrangler dev).
+ * 3. event.nativeEvent.context.cloudflare.env — legacy/alternate context shape.
  */
-export function getCloudflareEnv(_event?: {
+export function getCloudflareEnv(event?: {
   nativeEvent: { context: unknown };
 }): CloudflareEnv {
-  return globalThis.__env__ ?? {};
+  if (globalThis.__env__) {
+    return globalThis.__env__;
+  }
+
+  if (event) {
+    const ctx = event.nativeEvent.context as {
+      _platform?: { cloudflare?: { env?: CloudflareEnv } };
+      cloudflare?: { env?: CloudflareEnv };
+    };
+    const env =
+      ctx._platform?.cloudflare?.env ?? ctx.cloudflare?.env;
+    if (env) {
+      return env;
+    }
+  }
+
+  return {};
 }
