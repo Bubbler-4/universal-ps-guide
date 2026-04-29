@@ -18,3 +18,8 @@ migrations_dir = "drizzle"
 # GitHub OAuth app credentials (set as Wrangler secrets in production)
 # Run: wrangler secret put AUTH_GITHUB_ID
 #      wrangler secret put AUTH_GITHUB_SECRET
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
