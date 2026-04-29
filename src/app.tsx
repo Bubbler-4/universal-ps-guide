@@ -22,7 +22,6 @@ export default function App() {
     <Router
       root={props => (
         <Suspense>
-          <TopBar session={session() ?? null} />
           {props.children}
         </Suspense>
       )}
