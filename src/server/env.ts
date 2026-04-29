@@ -1,16 +1,43 @@
 import type { CloudflareEnv } from "~/lib/auth";
 
+declare global {
+  // Set by Nitro's cloudflare_module runtime on every request before the
+  // renderer is invoked. Used as the authoritative source of Cloudflare env
+  // bindings because @solidjs/vite-plugin-nitro-2 wraps the SolidStart handler
+  // with fromWebHandler(), which causes SolidStart to create its own H3 event
+  // with an empty context, making event.nativeEvent.context unreliable.
+  // eslint-disable-next-line no-var
+  var __env__: CloudflareEnv | undefined;
+}
+
 /**
- * Extracts the Cloudflare environment bindings from a Nitro request event
- * context (cloudflare_module preset).  Works for both APIEvent (server routes)
- * and the PageEvent returned by getRequestEvent() (root layout / pages).
+ * Returns the Cloudflare environment bindings for the current request.
+ *
+ * Resolution order:
+ * 1. globalThis.__env__ — set by Nitro's cloudflare_module runtime before the
+ *    renderer is invoked (production on Cloudflare Workers).
+ * 2. event.nativeEvent.context._platform.cloudflare.env — the Nitro H3 event
+ *    context path used by some presets (e.g. local wrangler dev).
+ * 3. event.nativeEvent.context.cloudflare.env — legacy/alternate context shape.
  */
-export function getCloudflareEnv(event: {
+export function getCloudflareEnv(event?: {
   nativeEvent: { context: unknown };
 }): CloudflareEnv {
-  console.log('context keys:', Object.keys(event.nativeEvent.context as object));
-  const ctx = event.nativeEvent.context as {
-    cloudflare?: { env?: CloudflareEnv };
-  };
-  return ctx.cloudflare?.env ?? {};
+  if (globalThis.__env__) {
+    return globalThis.__env__;
+  }
+
+  if (event) {
+    const ctx = event.nativeEvent.context as {
+      _platform?: { cloudflare?: { env?: CloudflareEnv } };
+      cloudflare?: { env?: CloudflareEnv };
+    };
+    const env =
+      ctx._platform?.cloudflare?.env ?? ctx.cloudflare?.env;
+    if (env) {
+      return env;
+    }
+  }
+
+  return {};
 }
