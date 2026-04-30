@@ -13,7 +13,7 @@ export async function GET(event: APIEvent): Promise<Response> {
   const env = getCloudflareEnv(event);
   const auth = createAuth(env);
   const response = await auth.api.signInSocial({
-    body: { provider: "github", callbackURL: "/" },
+    body: { provider: "github", callbackURL: "/setup-username" },
     headers: event.request.headers,
     asResponse: true,
   });
