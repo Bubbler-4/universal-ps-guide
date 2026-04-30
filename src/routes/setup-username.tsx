@@ -1,6 +1,6 @@
 import { createResource, createSignal, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { redirect, useNavigate } from "@solidjs/router";
+import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 
@@ -24,7 +24,6 @@ const USERNAME_RE = /^[a-zA-Z_-]{3,30}$/;
 export default function SetupUsernamePage() {
   createResource(checkSession);
 
-  const navigate = useNavigate();
   const [username, setUsername] = createSignal("");
   const [error, setError] = createSignal<string | null>(null);
   const [submitting, setSubmitting] = createSignal(false);
@@ -55,7 +54,7 @@ export default function SetupUsernamePage() {
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
       } else {
-        navigate("/");
+        location.href = "/";
       }
     } catch {
       setError("Network error. Please try again.");
