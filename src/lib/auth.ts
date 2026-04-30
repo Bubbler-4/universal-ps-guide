@@ -15,18 +15,21 @@ export function createAuth(env: CloudflareEnv) {
   if (!env.DB) {
     throw new Error("Missing required DB binding");
   }
-  if (!env.AUTH_SECRET?.trim()) {
+  const authSecret = env.AUTH_SECRET?.trim();
+  const githubId = env.AUTH_GITHUB_ID?.trim();
+  const githubSecret = env.AUTH_GITHUB_SECRET?.trim();
+  if (!authSecret) {
     throw new Error("Missing required env variable: AUTH_SECRET");
   }
-  if (!env.AUTH_GITHUB_ID?.trim()) {
+  if (!githubId) {
     throw new Error("Missing required env variable: AUTH_GITHUB_ID");
   }
-  if (!env.AUTH_GITHUB_SECRET?.trim()) {
+  if (!githubSecret) {
     throw new Error("Missing required env variable: AUTH_GITHUB_SECRET");
   }
   const db = getDb(env.DB as never);
   return betterAuth({
-    secret: env.AUTH_SECRET,
+    secret: authSecret,
     basePath: "/api/auth",
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -40,8 +43,8 @@ export function createAuth(env: CloudflareEnv) {
     }),
     socialProviders: {
       github: {
-        clientId: env.AUTH_GITHUB_ID,
-        clientSecret: env.AUTH_GITHUB_SECRET,
+        clientId: githubId,
+        clientSecret: githubSecret,
       },
     },
     trustedOrigins: (request) => {
@@ -89,11 +92,16 @@ export async function getServerSession(
   const { user } = result;
   const db = getDb(env.DB as never);
 
-  // Retrieve the GitHub account ID (the GitHub user's numeric ID) from
-  // better-auth's account table so we can look up the app user profile.
-  const accountRow = await db
-    .select({ accountId: authAccount.accountId })
+  // Single query: join better-auth's account table to the app's users table
+  // so we resolve the GitHub ID, username, and dbUserId in one round-trip.
+  const row = await db
+    .select({
+      githubId: authAccount.accountId,
+      id: users.id,
+      username: users.username,
+    })
     .from(authAccount)
+    .leftJoin(users, eq(users.githubId, authAccount.accountId))
     .where(
       and(
         eq(authAccount.userId, user.id),
@@ -102,25 +110,18 @@ export async function getServerSession(
     )
     .get();
 
-  if (!accountRow) return null;
+  if (!row) return null;
 
-  const githubId = accountRow.accountId;
-
-  // Look up the app user profile (username, db id) by GitHub ID.
-  const appUser = await db
-    .select({ id: users.id, username: users.username })
-    .from(users)
-    .where(eq(users.githubId, githubId))
-    .get();
+  const githubId = row.githubId;
 
   return {
     githubId,
     email: user.email ?? "",
     name: user.name ?? "",
     image: user.image ?? "",
-    username: appUser?.username ?? null,
-    dbUserId: appUser?.id ?? null,
-    needsUsername: !appUser?.username,
+    username: row.username ?? null,
+    dbUserId: row.id ?? null,
+    needsUsername: !row.username,
   };
 }
 

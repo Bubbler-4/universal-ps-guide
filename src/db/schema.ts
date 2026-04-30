@@ -34,25 +34,32 @@ export const authSession = sqliteTable("session", {
     .references(() => authUser.id, { onDelete: "cascade" }),
 });
 
-export const authAccount = sqliteTable("account", {
-  id: text("id").primaryKey(),
-  accountId: text("accountId").notNull(),
-  providerId: text("providerId").notNull(),
-  userId: text("userId")
-    .notNull()
-    .references(() => authUser.id, { onDelete: "cascade" }),
-  accessToken: text("accessToken"),
-  refreshToken: text("refreshToken"),
-  idToken: text("idToken"),
-  accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp" }),
-  refreshTokenExpiresAt: integer("refreshTokenExpiresAt", {
-    mode: "timestamp",
-  }),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
-});
+export const authAccount = sqliteTable(
+  "account",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("accountId").notNull(),
+    providerId: text("providerId").notNull(),
+    userId: text("userId")
+      .notNull()
+      .references(() => authUser.id, { onDelete: "cascade" }),
+    accessToken: text("accessToken"),
+    refreshToken: text("refreshToken"),
+    idToken: text("idToken"),
+    accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp" }),
+    refreshTokenExpiresAt: integer("refreshTokenExpiresAt", {
+      mode: "timestamp",
+    }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("account_user_provider_idx").on(table.userId, table.providerId),
+    uniqueIndex("account_provider_account_uidx").on(table.providerId, table.accountId),
+  ]
+);
 
 export const authVerification = sqliteTable("verification", {
   id: text("id").primaryKey(),

@@ -41,6 +41,10 @@ CREATE TABLE `account` (
 	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `account_user_provider_idx` ON `account` (`userId`, `providerId`);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `account_provider_account_uidx` ON `account` (`providerId`, `accountId`);
+--> statement-breakpoint
 CREATE TABLE `verification` (
 	`id` text PRIMARY KEY NOT NULL,
 	`identifier` text NOT NULL,
