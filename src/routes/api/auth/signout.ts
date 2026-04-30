@@ -16,13 +16,13 @@ export async function GET(event: APIEvent): Promise<Response> {
     headers: event.request.headers,
     asResponse: true,
   });
-  // After sign-out, redirect to the login page.
+  // After sign-out, redirect to the home page.
   if (response.ok) {
     const redirect = new Response(null, {
       status: 302,
       headers: response.headers,
     });
-    redirect.headers.set("Location", "/login");
+    redirect.headers.set("Location", "/");
     return redirect;
   }
   return response;

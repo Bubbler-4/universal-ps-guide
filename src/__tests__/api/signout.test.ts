@@ -41,11 +41,11 @@ function makeEvent(): APIEvent {
 // --- Tests ---
 
 describe("GET /api/auth/signout", () => {
-  it("promotes a 200 signOut response to a 302 redirect to /login", async () => {
+  it("promotes a 200 signOut response to a 302 redirect to /", async () => {
     mockOkResponse = true;
     const res = await GET(makeEvent());
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("/login");
+    expect(res.headers.get("location")).toBe("/");
   });
 
   it("preserves session-clearing cookies from the signOut response", async () => {
