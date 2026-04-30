@@ -30,7 +30,7 @@ export function createAuth(env: CloudflareEnv) {
   const db = getDb(env.DB as never);
   return betterAuth({
     appName: "Universal OJ Guide",
-    baseURL: "https://1oj.guide",
+    baseURL: "https://1ps.guide",
     secret: authSecret,
     basePath: "/api/auth",
     database: drizzleAdapter(db, {
