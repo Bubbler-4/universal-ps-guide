@@ -16,7 +16,7 @@ export async function GET(event: APIEvent): Promise<Response> {
   const session = await getServerSession(event.request, env);
 
   const destination =
-    session?.needsUsername ? "/setup-username" : "/";
+    session?.needsUsername === true ? "/setup-username" : "/";
 
   return new Response(null, {
     status: 302,
