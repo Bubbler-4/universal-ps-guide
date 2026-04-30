@@ -1,8 +1,8 @@
-import { SolidAuth, getSession, type SolidAuthConfig } from "@auth/solid-start";
-import GitHub from "@auth/core/providers/github";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { eq, and } from "drizzle-orm";
 import { getDb } from "~/db";
-import { users } from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { authUser, authSession, authAccount, authVerification, users } from "~/db/schema";
 
 export interface CloudflareEnv {
   DB?: unknown;
@@ -11,67 +11,51 @@ export interface CloudflareEnv {
   AUTH_GITHUB_SECRET?: string;
 }
 
-export function createAuthConfig(env: CloudflareEnv): SolidAuthConfig {
-  console.log('createAuthConfig', JSON.stringify(env));
+export function createAuth(env: CloudflareEnv) {
+  if (!env.DB) {
+    throw new Error("Missing required DB binding");
+  }
   const authSecret = env.AUTH_SECRET?.trim();
   const githubId = env.AUTH_GITHUB_ID?.trim();
   const githubSecret = env.AUTH_GITHUB_SECRET?.trim();
-
   if (!authSecret) {
-    throw new Error("Missing required auth environment variable: AUTH_SECRET");
+    throw new Error("Missing required env variable: AUTH_SECRET");
   }
   if (!githubId) {
-    throw new Error(
-      "Missing required auth environment variable: AUTH_GITHUB_ID"
-    );
+    throw new Error("Missing required env variable: AUTH_GITHUB_ID");
   }
   if (!githubSecret) {
-    throw new Error(
-      "Missing required auth environment variable: AUTH_GITHUB_SECRET"
-    );
+    throw new Error("Missing required env variable: AUTH_GITHUB_SECRET");
   }
-
-  return {
-    providers: [
-      GitHub({
+  const db = getDb(env.DB as never);
+  return betterAuth({
+    secret: authSecret,
+    basePath: "/api/auth",
+    database: drizzleAdapter(db, {
+      provider: "sqlite",
+      camelCase: true,
+      schema: {
+        user: authUser,
+        session: authSession,
+        account: authAccount,
+        verification: authVerification,
+      },
+    }),
+    socialProviders: {
+      github: {
         clientId: githubId,
         clientSecret: githubSecret,
-      }),
-    ],
-    secret: authSecret,
-    trustHost: true,
-    basePath: "/api/auth",
-    callbacks: {
-      async jwt({ token, account, profile }) {
-        if (account && profile) {
-          token.githubId = String(account.providerAccountId);
-          if (env.DB) {
-            const db = getDb(env.DB as never);
-            const existing = await db
-              .select({ id: users.id, username: users.username })
-              .from(users)
-              .where(eq(users.githubId, token.githubId as string))
-              .get();
-            if (existing) {
-              token.dbUserId = existing.id;
-              token.username = existing.username;
-            } else {
-              token.needsUsername = true;
-            }
-          }
-        }
-        return token;
-      },
-      async session({ session, token }) {
-        const user = session.user as unknown as Record<string, unknown>;
-        user.githubId = token.githubId as string | undefined;
-        user.username = token.username as string | undefined;
-        user.dbUserId = token.dbUserId as number | undefined;
-        user.needsUsername = token.needsUsername as boolean | undefined;
-        return session;
       },
     },
-  };
+    trustedOrigins: (request) => {
+      if (!request) return [];
+      try {
+        return [new URL(request.url).origin];
+      } catch {
+        return [];
+      }
+    },
+  });
 }
 
 export interface AppSession {
@@ -85,53 +69,59 @@ export interface AppSession {
 }
 
 /**
- * Reads the auth.js session from the request and returns the current session,
- * or null if the user is not signed in.
+ * Reads the better-auth session from the request and returns the current
+ * application session, or null if the user is not signed in.
  */
 export async function getServerSession(
   request: Request,
   env: CloudflareEnv
 ): Promise<AppSession | null> {
-  console.log('getServerSession', JSON.stringify(request), JSON.stringify(env));
   if (
     !env.AUTH_SECRET?.trim() ||
     !env.AUTH_GITHUB_ID?.trim() ||
-    !env.AUTH_GITHUB_SECRET?.trim()
+    !env.AUTH_GITHUB_SECRET?.trim() ||
+    !env.DB
   ) {
     return null;
   }
 
-  const config = createAuthConfig(env);
-  const session = await getSession(request, config);
+  const auth = createAuth(env);
+  const result = await auth.api.getSession({ headers: request.headers });
+  if (!result?.user) return null;
 
-  const githubId = session?.user?.githubId;
-  if (!githubId) return null;
+  const { user } = result;
+  const db = getDb(env.DB as never);
 
-  let username: string | null = null;
-  let dbUserId: number | null = null;
+  // Single query: join better-auth's account table to the app's users table
+  // so we resolve the GitHub ID, username, and dbUserId in one round-trip.
+  const row = await db
+    .select({
+      githubId: authAccount.accountId,
+      id: users.id,
+      username: users.username,
+    })
+    .from(authAccount)
+    .leftJoin(users, eq(users.githubId, authAccount.accountId))
+    .where(
+      and(
+        eq(authAccount.userId, user.id),
+        eq(authAccount.providerId, "github")
+      )
+    )
+    .get();
 
-  if (env.DB) {
-    const db = getDb(env.DB as never);
-    const user = await db
-      .select({ id: users.id, username: users.username })
-      .from(users)
-      .where(eq(users.githubId, githubId))
-      .get();
-    if (user) {
-      username = user.username;
-      dbUserId = user.id;
-    }
-  }
+  if (!row) return null;
+
+  const githubId = row.githubId;
 
   return {
     githubId,
-    email: String(session.user?.email ?? ""),
-    name: String(session.user?.name ?? ""),
-    image: String(session.user?.image ?? ""),
-    username,
-    dbUserId,
-    needsUsername: !username,
+    email: user.email ?? "",
+    name: user.name ?? "",
+    image: user.image ?? "",
+    username: row.username ?? null,
+    dbUserId: row.id ?? null,
+    needsUsername: !row.username,
   };
 }
 
-export { SolidAuth };

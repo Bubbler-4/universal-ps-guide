@@ -10,8 +10,8 @@ database_id = "323130c2-329a-4eea-b2af-e1ead7239c7e"
 migrations_dir = "drizzle"
 
 [vars]
-# Auth.js secret — generate with: npx auth secret
-# AUTH_SECRET = "replace-with-a-random-32-char-secret"
+# better-auth secret — generate with: openssl rand -base64 32
+# AUTH_SECRET = "replace-with-a-random-base64-encoded-32-byte-secret"
 
 AUTH_GITHUB_ID = "Ov23lizb0JlTyniOkxZC"
 
