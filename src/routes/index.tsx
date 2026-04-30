@@ -1,4 +1,23 @@
+import { createResource } from "solid-js";
+import { getRequestEvent } from "solid-js/web";
+import { redirect } from "@solidjs/router";
+import { getServerSession } from "~/lib/auth";
+import { getCloudflareEnv } from "~/server/env";
+
+async function checkSession() {
+  "use server";
+  const event = getRequestEvent();
+  if (!event) return null;
+  const env = getCloudflareEnv(event);
+  const session = await getServerSession(event.request, env);
+  if (session?.needsUsername) {
+    throw redirect("/setup-username");
+  }
+  return null;
+}
+
 export default function Home() {
+  createResource(checkSession);
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
       <div class="text-center">
