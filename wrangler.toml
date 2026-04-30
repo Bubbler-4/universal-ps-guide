@@ -12,8 +12,8 @@ database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "drizzle"
 
 [vars]
-# Auth.js secret — generate with: npx auth secret
-# AUTH_SECRET = "replace-with-a-random-32-char-secret"
+# better-auth secret — generate with: openssl rand -base64 32
+# AUTH_SECRET = "replace-with-a-random-base64-encoded-32-byte-secret"
 
 # GitHub OAuth app credentials (set as Wrangler secrets in production)
 # Run: wrangler secret put AUTH_GITHUB_ID
