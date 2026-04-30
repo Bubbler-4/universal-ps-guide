@@ -8,7 +8,7 @@ async function checkSession() {
   const event = getRequestEvent(); console.log("checkSession");
   if (!event) return;
   const env = getCloudflareEnv(event);
-  const session = await getServerSession(event.request, env);
+  const session = await getServerSession(event.request, env); console.log("checkSession2", session);
   if (session?.needsUsername) {
     throw redirect("/setup-username");
   }
