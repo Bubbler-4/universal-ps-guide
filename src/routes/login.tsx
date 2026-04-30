@@ -29,7 +29,7 @@ export default function LoginPage() {
         Sign in to submit translations, solutions, and vote on content.
       </p>
       <a
-        href="/api/auth/signin/github"
+        href="/api/auth/github"
         class="inline-flex items-center gap-3 bg-gray-900 hover:bg-gray-700 text-white font-semibold px-6 py-3 rounded-lg text-base transition-colors shadow-md"
       >
         <svg

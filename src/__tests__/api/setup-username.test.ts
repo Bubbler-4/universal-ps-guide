@@ -41,6 +41,7 @@ function makeEvent(body: unknown, contentType = "application/json"): APIEvent {
 }
 
 const VALID_SESSION: AppSession = {
+  firebaseUid: "firebase-uid-123",
   githubId: "gh-123",
   email: "user@example.com",
   name: "Test User",
