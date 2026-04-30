@@ -54,7 +54,7 @@ export default function SetupUsernamePage() {
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
       } else {
-        location.href = "/";
+        location.replace("/");
       }
     } catch {
       setError("Network error. Please try again.");
