@@ -12,9 +12,18 @@ import { getCloudflareEnv } from "~/server/env";
 export async function GET(event: APIEvent): Promise<Response> {
   const env = getCloudflareEnv(event);
   const auth = createAuth(env);
-  return auth.api.signInSocial({
+  const response = await auth.api.signInSocial({
     body: { provider: "github", callbackURL: "/" },
     headers: event.request.headers,
     asResponse: true,
   });
+  // better-auth returns 200 JSON with a `location` header rather than a true
+  // 302. Promote it to a real redirect so the browser navigates to GitHub.
+  if (response.ok) {
+    return new Response(null, {
+      status: 302,
+      headers: response.headers,
+    });
+  }
+  return response;
 }
