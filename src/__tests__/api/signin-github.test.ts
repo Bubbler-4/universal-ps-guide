@@ -44,11 +44,11 @@ function makeEvent(): APIEvent {
 // --- Tests ---
 
 describe("GET /api/auth/signin/github", () => {
-  it("passes / as the callbackURL to signInSocial", async () => {
+  it("passes /api/auth/callback as the callbackURL to signInSocial", async () => {
     capturedBody = null;
     await GET(makeEvent());
     expect(capturedBody).not.toBeNull();
-    expect(capturedBody!.callbackURL).toBe("/");
+    expect(capturedBody!.callbackURL).toBe("/api/auth/callback");
     expect(capturedBody!.provider).toBe("github");
   });
 
