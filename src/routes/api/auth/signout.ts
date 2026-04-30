@@ -17,7 +17,7 @@ export async function GET(event: APIEvent): Promise<Response> {
     asResponse: true,
   });
   // After sign-out, redirect to the login page.
-  if (response.ok || response.status === 200) {
+  if (response.ok) {
     const redirect = new Response(null, {
       status: 302,
       headers: response.headers,

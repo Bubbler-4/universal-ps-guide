@@ -15,6 +15,15 @@ export function createAuth(env: CloudflareEnv) {
   if (!env.DB) {
     throw new Error("Missing required DB binding");
   }
+  if (!env.AUTH_SECRET?.trim()) {
+    throw new Error("Missing required env variable: AUTH_SECRET");
+  }
+  if (!env.AUTH_GITHUB_ID?.trim()) {
+    throw new Error("Missing required env variable: AUTH_GITHUB_ID");
+  }
+  if (!env.AUTH_GITHUB_SECRET?.trim()) {
+    throw new Error("Missing required env variable: AUTH_GITHUB_SECRET");
+  }
   const db = getDb(env.DB as never);
   return betterAuth({
     secret: env.AUTH_SECRET,
@@ -31,8 +40,8 @@ export function createAuth(env: CloudflareEnv) {
     }),
     socialProviders: {
       github: {
-        clientId: env.AUTH_GITHUB_ID!,
-        clientSecret: env.AUTH_GITHUB_SECRET!,
+        clientId: env.AUTH_GITHUB_ID,
+        clientSecret: env.AUTH_GITHUB_SECRET,
       },
     },
     trustedOrigins: (request) => {
