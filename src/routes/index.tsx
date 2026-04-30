@@ -1,9 +1,9 @@
 import { getRequestEvent } from "solid-js/web";
-import { redirect } from "@solidjs/router";
+import { cache, createAsync, redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 
-async function checkSession() {
+const checkSession = cache(async () => {
   "use server";
   const event = getRequestEvent();
   if (!event) return;
@@ -12,13 +12,14 @@ async function checkSession() {
   if (session?.needsUsername) {
     throw redirect("/setup-username");
   }
-}
+}, "checkSession");
 
 export const route = {
   load: () => checkSession(),
 };
 
 export default function Home() {
+  createAsync(() => checkSession());
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
       <div class="text-center">
