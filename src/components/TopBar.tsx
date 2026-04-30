@@ -43,6 +43,7 @@ export default function TopBar(props: TopBarProps) {
             </Show>
             <a
               href="/api/auth/signout"
+              target="_self"
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
             >
               Logout
