@@ -1,4 +1,4 @@
-import { createResource, createSignal, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
@@ -7,7 +7,7 @@ import { getCloudflareEnv } from "~/server/env";
 async function checkSession() {
   "use server";
   const event = getRequestEvent();
-  if (!event) return null;
+  if (!event) return;
   const env = getCloudflareEnv(event);
   const session = await getServerSession(event.request, env);
   if (!session) {
@@ -16,14 +16,15 @@ async function checkSession() {
   if (!session.needsUsername) {
     throw redirect("/");
   }
-  return session;
 }
+
+export const route = {
+  load: () => checkSession(),
+};
 
 const USERNAME_RE = /^[a-zA-Z_-]{3,30}$/;
 
 export default function SetupUsernamePage() {
-  createResource(checkSession);
-
   const [username, setUsername] = createSignal("");
   const [error, setError] = createSignal<string | null>(null);
   const [submitting, setSubmitting] = createSignal(false);

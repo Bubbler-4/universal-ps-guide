@@ -1,4 +1,3 @@
-import { createResource } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
@@ -7,7 +6,7 @@ import { getCloudflareEnv } from "~/server/env";
 async function checkSession() {
   "use server";
   const event = getRequestEvent();
-  if (!event) return null;
+  if (!event) return;
   const env = getCloudflareEnv(event);
   const session = await getServerSession(event.request, env);
   if (session) {
@@ -16,12 +15,13 @@ async function checkSession() {
     }
     throw redirect("/");
   }
-  return null;
 }
 
-export default function LoginPage() {
-  createResource(checkSession);
+export const route = {
+  load: () => checkSession(),
+};
 
+export default function LoginPage() {
   return (
     <main class="mx-auto max-w-md px-4 py-16 text-center">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Sign In</h1>
