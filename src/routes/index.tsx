@@ -46,6 +46,8 @@ export default function Home() {
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Search a Problem</h2>
         <form onSubmit={handleSearch} class="flex flex-col sm:flex-row gap-3">
           <select
+            id="site-select"
+            aria-label="Online judge site"
             value={site()}
             onChange={(e) => setSite(e.currentTarget.value)}
             class="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -55,7 +57,9 @@ export default function Home() {
             ))}
           </select>
           <input
+            id="problem-id-input"
             type="text"
+            aria-label="Problem ID"
             placeholder="Problem ID (e.g. 1700A)"
             value={problemId()}
             onInput={(e) => setProblemId(e.currentTarget.value)}
