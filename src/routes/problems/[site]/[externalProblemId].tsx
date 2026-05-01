@@ -1,6 +1,6 @@
 import { createEffect, createSignal, For, Show, Switch, Match } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect, useParams, A } from "@solidjs/router";
+import { cache, createAsync, redirect, revalidate, useParams, A } from "@solidjs/router";
 import { eq, and, isNull, asc } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
@@ -24,6 +24,7 @@ type ProblemResult =
       site: string;
       externalProblemId: string;
       isLoggedIn: boolean;
+      currentUserDbId: number | null;
       translations: TranslationWithAuthor[];
     }
   | { status: "not_found" }
@@ -56,6 +57,7 @@ const getProblemData = cache(
     const db = getDb(env.DB as never);
     const session = await getServerSession(event.request, env);
     const isLoggedIn = !!(session && !session.needsUsername);
+    const currentUserDbId = (isLoggedIn && session?.dbUserId) ? session.dbUserId : null;
 
     const existing = await db
       .select()
@@ -126,6 +128,7 @@ const getProblemData = cache(
       site: problem!.site,
       externalProblemId: problem!.externalProblemId,
       isLoggedIn,
+      currentUserDbId,
       translations: translationList,
     };
   },
@@ -153,6 +156,51 @@ export default function ProblemPage() {
   // (e.g. client-side navigation between problems).
   const [selectedIdx, setSelectedIdx] = createSignal(0);
   const selectedTranslation = () => foundData()?.translations[selectedIdx()];
+
+  // True when the currently selected translation belongs to the logged-in user.
+  const selectedIsOwned = () => {
+    const t = selectedTranslation();
+    const uid = foundData()?.currentUserDbId;
+    return !!(uid && t && t.authorId === uid);
+  };
+
+  // True when the logged-in user already has a translation in the list.
+  const userOwnsATranslation = () => {
+    const uid = foundData()?.currentUserDbId;
+    return !!(uid && foundData()?.translations.some((t) => t.authorId === uid));
+  };
+
+  const [deleteError, setDeleteError] = createSignal<string | null>(null);
+  const [deleting, setDeleting] = createSignal(false);
+
+  const handleDelete = async () => {
+    const t = selectedTranslation();
+    if (!t) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete your translation? This cannot be undone."
+      )
+    )
+      return;
+
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/translations/${t.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await revalidate(getProblemData.key);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(
+          (body as { error?: string }).error ?? "Failed to delete translation."
+        );
+      }
+    } catch {
+      setDeleteError("Network error. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   createEffect(() => {
     const translationsArr = foundData()?.translations;
@@ -185,7 +233,8 @@ export default function ProblemPage() {
           <section class="mb-10">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-xl font-semibold text-gray-800">Translations</h2>
-              <Show when={foundData()?.isLoggedIn}>
+              {/* "Add translation" only for logged-in users who don't own one yet */}
+              <Show when={foundData()?.isLoggedIn && !userOwnsATranslation()}>
                 <A
                   href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
                   class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
@@ -227,9 +276,33 @@ export default function ProblemPage() {
               {/* Rendered translation content */}
               <Show when={selectedTranslation()}>
                 <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                  <p class="text-xs text-gray-400 mb-3">
-                    By {selectedTranslation()!.authorUsername ?? "Anonymous"}
-                  </p>
+                  <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs text-gray-400">
+                      By {selectedTranslation()!.authorUsername ?? "Anonymous"}
+                    </p>
+                    {/* Edit/Delete buttons shown only for the user's own translation */}
+                    <Show when={selectedIsOwned()}>
+                      <div class="flex gap-2">
+                        <A
+                          href={`/problems/${params.site}/${params.externalProblemId}/edit-translation`}
+                          class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Edit translation
+                        </A>
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={deleting()}
+                          class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                        >
+                          {deleting() ? "Deleting…" : "Delete translation"}
+                        </button>
+                      </div>
+                    </Show>
+                  </div>
+                  <Show when={deleteError()}>
+                    <p class="text-sm text-red-600 mb-2">{deleteError()}</p>
+                  </Show>
                   <div
                     class="prose max-w-none"
                     innerHTML={selectedTranslation()!.contentHtml}
