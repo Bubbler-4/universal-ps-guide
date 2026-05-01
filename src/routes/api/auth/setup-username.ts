@@ -3,8 +3,7 @@ import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
 import { users } from "~/db/schema";
-
-const USERNAME_RE = /^[a-zA-Z_-]{3,30}$/;
+import { USERNAME_RE, USERNAME_FORMAT_ERROR } from "~/lib/username";
 
 /**
  * POST /api/auth/setup-username
@@ -40,10 +39,7 @@ export async function POST(event: APIEvent): Promise<Response> {
 
   if (typeof username !== "string" || !USERNAME_RE.test(username)) {
     return Response.json(
-      {
-        error:
-          "Username must be 3-30 characters and contain only letters, underscores, or hyphens.",
-      },
+      { error: USERNAME_FORMAT_ERROR },
       { status: 400 }
     );
   }
