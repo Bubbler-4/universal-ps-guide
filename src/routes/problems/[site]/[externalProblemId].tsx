@@ -57,7 +57,7 @@ const getProblemData = cache(
     const db = getDb(env.DB as never);
     const session = await getServerSession(event.request, env);
     const isLoggedIn = !!(session && !session.needsUsername);
-    const currentUserDbId = session?.dbUserId ?? null;
+    const currentUserDbId = isLoggedIn ? (session?.dbUserId ?? null) : null;
 
     const existing = await db
       .select()

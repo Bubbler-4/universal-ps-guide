@@ -116,18 +116,19 @@ export default function EditTranslationPage() {
     `${displayName()}/${params.externalProblemId} - Edit translation`;
 
   const [content, setContent] = createSignal("");
-  const [initialized, setInitialized] = createSignal(false);
+  const [initializedTranslationId, setInitializedTranslationId] = createSignal<number | null>(null);
   const [previewHtml, setPreviewHtml] = createSignal<string | null>(null);
   const [submitting, setSubmitting] = createSignal(false);
   const [submitError, setSubmitError] = createSignal<string | null>(null);
   const [submitted, setSubmitted] = createSignal(false);
 
-  // Pre-fill the textarea with the existing content once data loads.
+  // Pre-fill the textarea with the existing content whenever a different
+  // translation is loaded, while avoiding overwriting edits for the same one.
   createEffect(() => {
     const d = data();
-    if (d?.status === "ok" && !initialized()) {
+    if (d?.status === "ok" && initializedTranslationId() !== d.translationId) {
       setContent(d.existingContent);
-      setInitialized(true);
+      setInitializedTranslationId(d.translationId);
     }
   });
 
