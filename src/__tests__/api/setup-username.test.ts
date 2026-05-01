@@ -165,6 +165,12 @@ describe("POST /api/auth/setup-username", () => {
     expect(res.status).toBe(200);
   });
 
+  it("accepts usernames with digits", async () => {
+    mockSession = VALID_SESSION;
+    const res = await POST(makeEvent({ username: "user123" }));
+    expect(res.status).toBe(200);
+  });
+
   it("accepts a 30-character username (boundary)", async () => {
     mockSession = VALID_SESSION;
     const res = await POST(makeEvent({ username: "a".repeat(30) }));
