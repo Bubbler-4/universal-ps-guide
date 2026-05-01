@@ -149,9 +149,24 @@ export default function ProblemPage() {
     return d?.status === "found" ? d : null;
   };
 
-  // Track selected translation index.
+  // Track selected translation index. Reset to 0 when translations change
+  // (e.g. client-side navigation between problems).
   const [selectedIdx, setSelectedIdx] = createSignal(0);
   const selectedTranslation = () => foundData()?.translations[selectedIdx()];
+
+  createEffect(() => {
+    const translationsArr = foundData()?.translations;
+    const idx = selectedIdx();
+
+    if (!translationsArr?.length) {
+      if (idx !== 0) setSelectedIdx(0);
+      return;
+    }
+
+    if (idx >= translationsArr.length) {
+      setSelectedIdx(0);
+    }
+  });
 
   createEffect(() => {
     const d = data();

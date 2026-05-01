@@ -3,14 +3,11 @@ import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useParams, A } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-import { getDb } from "~/db";
-import { problems, translations, users } from "~/db/schema";
-import { eq, and } from "drizzle-orm";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
 
 type PageData =
-  | { status: "ok"; site: string; externalProblemId: string; dbUserId: number }
+  | { status: "ok"; site: string; externalProblemId: string }
   | { status: "invalid_params" }
   | { status: "server_error" };
 
@@ -25,11 +22,11 @@ const getAddTranslationData = cache(
     if (!env.DB) return { status: "server_error" };
 
     const session = await getServerSession(event.request, env);
-    if (!session || session.needsUsername) {
+    if (!session) {
       throw redirect(`/login`);
     }
-    if (!session.dbUserId) {
-      return { status: "server_error" };
+    if (session.needsUsername) {
+      throw redirect(`/setup-username`);
     }
 
     const normalizedSite = site.trim().toLowerCase();
@@ -46,7 +43,6 @@ const getAddTranslationData = cache(
       status: "ok",
       site: normalizedSite,
       externalProblemId: normalizedId,
-      dbUserId: session.dbUserId,
     };
   },
   "getAddTranslationData"
@@ -95,7 +91,6 @@ export default function AddTranslationPage() {
         body: JSON.stringify({
           site: d.site,
           externalProblemId: d.externalProblemId,
-          authorId: d.dbUserId,
           content: trimmed,
         }),
       });

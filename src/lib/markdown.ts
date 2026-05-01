@@ -3,15 +3,13 @@ import texmath from "markdown-it-texmath";
 import katex from "katex";
 
 /**
- * Renders a CommonMark markdown string to HTML.
+ * Renders a markdown string to HTML using the CommonMark preset.
  * - Raw HTML tags are disabled (html: false).
  * - Math expressions delimited by $…$ (inline) and $$…$$ (block) are rendered
  *   with KaTeX.
  */
-const md = new MarkdownIt({
+const md = new MarkdownIt("commonmark", {
   html: false,        // disable raw HTML tags in user content
-  linkify: true,
-  typographer: false,
 }).use(texmath, {
   engine: katex,
   delimiters: "dollars",
