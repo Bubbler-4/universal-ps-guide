@@ -1,15 +1,32 @@
-import { createEffect, Switch, Match } from "solid-js";
+import { createEffect, createSignal, For, Show, Switch, Match } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect, useParams } from "@solidjs/router";
-import { eq, and } from "drizzle-orm";
+import { cache, createAsync, redirect, revalidate, useParams, A } from "@solidjs/router";
+import { eq, and, isNull, asc } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
-import { problems } from "~/db/schema";
+import { problems, translations, users } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
+import { renderMarkdown } from "~/lib/markdown";
+
+type TranslationWithAuthor = {
+  id: number;
+  authorId: number;
+  authorUsername: string | null;
+  content: string;
+  contentHtml: string;
+  createdAt: string;
+};
 
 type ProblemResult =
-  | { status: "found"; site: string; externalProblemId: string }
+  | {
+      status: "found";
+      site: string;
+      externalProblemId: string;
+      isLoggedIn: boolean;
+      currentUserDbId: number | null;
+      translations: TranslationWithAuthor[];
+    }
   | { status: "not_found" }
   | { status: "invalid_params" }
   | { status: "server_error" }
@@ -40,6 +57,7 @@ const getProblemData = cache(
     const db = getDb(env.DB as never);
     const session = await getServerSession(event.request, env);
     const isLoggedIn = !!(session && !session.needsUsername);
+    const currentUserDbId = isLoggedIn ? (session?.dbUserId ?? null) : null;
 
     const existing = await db
       .select()
@@ -47,35 +65,72 @@ const getProblemData = cache(
       .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
       .get();
 
-    if (existing) {
-      return { status: "found", site: existing.site, externalProblemId: existing.externalProblemId };
+    let problem = existing;
+
+    if (!existing) {
+      if (!isLoggedIn) {
+        return { status: "not_found" };
+      }
+
+      // Logged-in user: create the problem and show the page.
+      const inserted = await db
+        .insert(problems)
+        .values({ site: normalizedSite, externalProblemId: normalizedId })
+        .onConflictDoNothing()
+        .returning()
+        .get();
+
+      problem =
+        inserted ??
+        (await db
+          .select()
+          .from(problems)
+          .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
+          .get());
+
+      if (!problem) {
+        return { status: "create_failed" };
+      }
     }
 
-    if (!isLoggedIn) {
-      return { status: "not_found" };
-    }
+    // Fetch active translations with author usernames.
+    const rows = await db
+      .select({
+        id: translations.id,
+        authorId: translations.authorId,
+        authorUsername: users.username,
+        content: translations.content,
+        createdAt: translations.createdAt,
+      })
+      .from(translations)
+      .leftJoin(users, eq(users.id, translations.authorId))
+      .where(
+        and(
+          eq(translations.problemId, problem!.id),
+          eq(translations.status, "active"),
+          isNull(translations.deletedAt)
+        )
+      )
+      .orderBy(asc(translations.createdAt))
+      .all();
 
-    // Logged-in user: create the problem and show the page.
-    const inserted = await db
-      .insert(problems)
-      .values({ site: normalizedSite, externalProblemId: normalizedId })
-      .onConflictDoNothing()
-      .returning()
-      .get();
+    const translationList: TranslationWithAuthor[] = rows.map((row) => ({
+      id: row.id,
+      authorId: row.authorId,
+      authorUsername: row.authorUsername ?? null,
+      content: row.content,
+      contentHtml: renderMarkdown(row.content),
+      createdAt: row.createdAt,
+    }));
 
-    const problem =
-      inserted ??
-      (await db
-        .select()
-        .from(problems)
-        .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
-        .get());
-
-    if (!problem) {
-      return { status: "create_failed" };
-    }
-
-    return { status: "found", site: problem.site, externalProblemId: problem.externalProblemId };
+    return {
+      status: "found",
+      site: problem!.site,
+      externalProblemId: problem!.externalProblemId,
+      isLoggedIn,
+      currentUserDbId,
+      translations: translationList,
+    };
   },
   "getProblemData"
 );
@@ -92,6 +147,75 @@ export default function ProblemPage() {
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () => `${displayName()}/${params.externalProblemId}`;
 
+  const foundData = () => {
+    const d = data();
+    return d?.status === "found" ? d : null;
+  };
+
+  // Track selected translation index. Reset to 0 when translations change
+  // (e.g. client-side navigation between problems).
+  const [selectedIdx, setSelectedIdx] = createSignal(0);
+  const selectedTranslation = () => foundData()?.translations[selectedIdx()];
+
+  // True when the currently selected translation belongs to the logged-in user.
+  const selectedIsOwned = () => {
+    const t = selectedTranslation();
+    const uid = foundData()?.currentUserDbId;
+    return !!(uid && t && t.authorId === uid);
+  };
+
+  // True when the logged-in user already has a translation in the list.
+  const userOwnsATranslation = () => {
+    const uid = foundData()?.currentUserDbId;
+    return !!(uid && foundData()?.translations.some((t) => t.authorId === uid));
+  };
+
+  const [deleteError, setDeleteError] = createSignal<string | null>(null);
+  const [deleting, setDeleting] = createSignal(false);
+
+  const handleDelete = async () => {
+    const t = selectedTranslation();
+    if (!t) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete your translation? This cannot be undone."
+      )
+    )
+      return;
+
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/translations/${t.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await revalidate(getProblemData.key);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(
+          (body as { error?: string }).error ?? "Failed to delete translation."
+        );
+      }
+    } catch {
+      setDeleteError("Network error. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  createEffect(() => {
+    const translationsArr = foundData()?.translations;
+    const idx = selectedIdx();
+
+    if (!translationsArr?.length) {
+      if (idx !== 0) setSelectedIdx(0);
+      return;
+    }
+
+    if (idx >= translationsArr.length) {
+      setSelectedIdx(0);
+    }
+  });
+
   createEffect(() => {
     const d = data();
     if (d?.status === "found") {
@@ -103,7 +227,90 @@ export default function ProblemPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Switch fallback={<p class="text-gray-500">Loading…</p>}>
         <Match when={data()?.status === "found"}>
-          <h1 class="text-3xl font-bold text-gray-900">{heading()}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-8">{heading()}</h1>
+
+          {/* Translations section */}
+          <section class="mb-10">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Translations</h2>
+              {/* "Add translation" only for logged-in users who don't own one yet */}
+              <Show when={foundData()?.isLoggedIn && !userOwnsATranslation()}>
+                <A
+                  href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
+                  class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Add translation
+                </A>
+              </Show>
+            </div>
+
+            <Show
+              when={(foundData()?.translations.length ?? 0) > 0}
+              fallback={
+                <p class="text-gray-500 italic">No translations yet.</p>
+              }
+            >
+              {/* Dropdown to pick a translation when there are multiple */}
+              <Show when={(foundData()?.translations.length ?? 0) > 1}>
+                <div class="mb-4">
+                  <label for="translation-select" class="block text-sm font-medium text-gray-700 mb-1">
+                    Select translation
+                  </label>
+                  <select
+                    id="translation-select"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setSelectedIdx(Number(e.currentTarget.value))}
+                    value={selectedIdx()}
+                  >
+                    <For each={foundData()?.translations}>
+                      {(t, i) => (
+                        <option value={i()}>
+                          {t.authorUsername ?? "Anonymous"}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </div>
+              </Show>
+
+              {/* Rendered translation content */}
+              <Show when={selectedTranslation()}>
+                <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+                  <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs text-gray-400">
+                      By {selectedTranslation()!.authorUsername ?? "Anonymous"}
+                    </p>
+                    {/* Edit/Delete buttons shown only for the user's own translation */}
+                    <Show when={selectedIsOwned()}>
+                      <div class="flex gap-2">
+                        <A
+                          href={`/problems/${params.site}/${params.externalProblemId}/edit-translation`}
+                          class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                        >
+                          Edit translation
+                        </A>
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={deleting()}
+                          class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                        >
+                          {deleting() ? "Deleting…" : "Delete translation"}
+                        </button>
+                      </div>
+                    </Show>
+                  </div>
+                  <Show when={deleteError()}>
+                    <p class="text-sm text-red-600 mb-2">{deleteError()}</p>
+                  </Show>
+                  <div
+                    class="prose max-w-none"
+                    innerHTML={selectedTranslation()!.contentHtml}
+                  />
+                </div>
+              </Show>
+            </Show>
+          </section>
         </Match>
         <Match when={data()?.status === "not_found"}>
           <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">

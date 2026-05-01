@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
 import { createTestDb, makeRequestEvent, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
+import type { AppSession } from "~/lib/auth";
 
 // Mock the server/db module so handlers use the in-memory Drizzle instance.
 let mockDb: TestDb;
@@ -9,8 +10,32 @@ vi.mock("~/server/db", () => ({
   getD1: () => mockDb,
 }));
 
+// Mock auth so POST tests can control the session without real OAuth.
+let mockSession: AppSession | null = null;
+vi.mock("~/lib/auth", () => ({
+  getServerSession: () => Promise.resolve(mockSession),
+}));
+
+// Mock env so getCloudflareEnv doesn't throw in test context.
+vi.mock("~/server/env", () => ({
+  getCloudflareEnv: () => ({}),
+}));
+
 // Import AFTER vi.mock so the mock is applied.
 const { GET, POST } = await import("~/routes/api/translations/index");
+
+/** A fully-valid session used by POST tests that need authentication. */
+function makeSession(dbUserId: number): AppSession {
+  return {
+    githubId: "gh123",
+    email: "test@example.com",
+    name: "Test User",
+    image: "",
+    username: "testuser",
+    dbUserId,
+    needsUsername: false,
+  };
+}
 
 describe("GET /api/translations", () => {
   let sqlite: Database.Database;
@@ -148,10 +173,26 @@ describe("POST /api/translations", () => {
     const result = createTestDb();
     sqlite = result.sqlite;
     mockDb = result.db;
+    // Default: authenticated with userId=1 (overridden per-test as needed).
+    mockSession = makeSession(1);
   });
 
   afterEach(() => {
     sqlite.close();
+    mockSession = null;
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    mockSession = null;
+    const event = makeRequestEvent("http://localhost/api/translations", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      content: "Hello",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
   });
 
   it("returns 400 when request has no body (json() throws)", async () => {
@@ -184,20 +225,6 @@ describe("POST /api/translations", () => {
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: 42,
       externalProblemId: "1700A",
-      authorId: 1,
-      content: "Hello",
-    });
-    const res = await POST(event as APIEvent);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty("error");
-  });
-
-  it("returns 400 when authorId is not a number", async () => {
-    const event = makeRequestEvent("http://localhost/api/translations", {
-      site: "codeforces",
-      externalProblemId: "1700A",
-      authorId: "alice",
       content: "Hello",
     });
     const res = await POST(event as APIEvent);
@@ -210,7 +237,6 @@ describe("POST /api/translations", () => {
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: "   ",
       externalProblemId: "1700A",
-      authorId: 1,
       content: "Hello",
     });
     const res = await POST(event as APIEvent);
@@ -223,7 +249,6 @@ describe("POST /api/translations", () => {
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: "codeforces",
       externalProblemId: "1700A",
-      authorId: 1,
       content: "   ",
     });
     const res = await POST(event as APIEvent);
@@ -234,11 +259,11 @@ describe("POST /api/translations", () => {
 
   it("creates a new problem and translation, returning 201", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (99, 'bob', 'bob@example.com')`);
+    mockSession = makeSession(99);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: "codeforces",
       externalProblemId: "1700A",
-      authorId: 99,
       content: "Problem statement here",
     });
     const res = await POST(event as APIEvent);
@@ -262,11 +287,11 @@ describe("POST /api/translations", () => {
     sqlite.exec(
       `INSERT INTO problems (id, site, external_problem_id) VALUES (77, 'qoj', '1234')`
     );
+    mockSession = makeSession(5);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: "qoj",
       externalProblemId: "1234",
-      authorId: 5,
       content: "My translation",
     });
     const res = await POST(event as APIEvent);
@@ -285,11 +310,11 @@ describe("POST /api/translations", () => {
 
   it("trims whitespace from site, externalProblemId, and content", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (3, 'dave', 'dave@example.com')`);
+    mockSession = makeSession(3);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
       site: "  codeforces  ",
       externalProblemId: "  1700A  ",
-      authorId: 3,
       content: "  trimmed content  ",
     });
     const res = await POST(event as APIEvent);
@@ -307,11 +332,11 @@ describe("POST /api/translations", () => {
 
   it("returns 409 and preserves first content when same author POSTs again for same problem", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (7, 'eve', 'eve@example.com')`);
+    mockSession = makeSession(7);
 
     const firstEvent = makeRequestEvent("http://localhost/api/translations", {
       site: "codeforces",
       externalProblemId: "800A",
-      authorId: 7,
       content: "Original translation",
     });
     const firstRes = await POST(firstEvent as unknown as APIEvent);
@@ -320,7 +345,6 @@ describe("POST /api/translations", () => {
     const secondEvent = makeRequestEvent("http://localhost/api/translations", {
       site: "codeforces",
       externalProblemId: "800A",
-      authorId: 7,
       content: "Replacement translation",
     });
     const secondRes = await POST(secondEvent as unknown as APIEvent);
