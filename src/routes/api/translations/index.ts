@@ -1,5 +1,5 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { problems, translations } from "~/db/schema";
+import { problems, translations, users } from "~/db/schema";
 import { eq, and, isNull, asc } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 
@@ -36,8 +36,18 @@ export async function GET(event: APIEvent) {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: translations.id,
+      problemId: translations.problemId,
+      authorId: translations.authorId,
+      authorUsername: users.username,
+      content: translations.content,
+      status: translations.status,
+      createdAt: translations.createdAt,
+      updatedAt: translations.updatedAt,
+    })
     .from(translations)
+    .leftJoin(users, eq(users.id, translations.authorId))
     .where(
       and(
         eq(translations.problemId, problem.id),

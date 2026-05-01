@@ -1,15 +1,31 @@
-import { createEffect, Switch, Match } from "solid-js";
+import { createEffect, createSignal, For, Show, Switch, Match } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect, useParams } from "@solidjs/router";
-import { eq, and } from "drizzle-orm";
+import { cache, createAsync, redirect, useParams, A } from "@solidjs/router";
+import { eq, and, isNull, asc } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
-import { problems } from "~/db/schema";
+import { problems, translations, users } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
+import { renderMarkdown } from "~/lib/markdown";
+
+type TranslationWithAuthor = {
+  id: number;
+  authorId: number;
+  authorUsername: string | null;
+  content: string;
+  contentHtml: string;
+  createdAt: string;
+};
 
 type ProblemResult =
-  | { status: "found"; site: string; externalProblemId: string }
+  | {
+      status: "found";
+      site: string;
+      externalProblemId: string;
+      isLoggedIn: boolean;
+      translations: TranslationWithAuthor[];
+    }
   | { status: "not_found" }
   | { status: "invalid_params" }
   | { status: "server_error" }
@@ -47,35 +63,71 @@ const getProblemData = cache(
       .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
       .get();
 
-    if (existing) {
-      return { status: "found", site: existing.site, externalProblemId: existing.externalProblemId };
+    let problem = existing;
+
+    if (!existing) {
+      if (!isLoggedIn) {
+        return { status: "not_found" };
+      }
+
+      // Logged-in user: create the problem and show the page.
+      const inserted = await db
+        .insert(problems)
+        .values({ site: normalizedSite, externalProblemId: normalizedId })
+        .onConflictDoNothing()
+        .returning()
+        .get();
+
+      problem =
+        inserted ??
+        (await db
+          .select()
+          .from(problems)
+          .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
+          .get());
+
+      if (!problem) {
+        return { status: "create_failed" };
+      }
     }
 
-    if (!isLoggedIn) {
-      return { status: "not_found" };
-    }
+    // Fetch active translations with author usernames.
+    const rows = await db
+      .select({
+        id: translations.id,
+        authorId: translations.authorId,
+        authorUsername: users.username,
+        content: translations.content,
+        createdAt: translations.createdAt,
+      })
+      .from(translations)
+      .leftJoin(users, eq(users.id, translations.authorId))
+      .where(
+        and(
+          eq(translations.problemId, problem!.id),
+          eq(translations.status, "active"),
+          isNull(translations.deletedAt)
+        )
+      )
+      .orderBy(asc(translations.createdAt))
+      .all();
 
-    // Logged-in user: create the problem and show the page.
-    const inserted = await db
-      .insert(problems)
-      .values({ site: normalizedSite, externalProblemId: normalizedId })
-      .onConflictDoNothing()
-      .returning()
-      .get();
+    const translationList: TranslationWithAuthor[] = rows.map((row) => ({
+      id: row.id,
+      authorId: row.authorId,
+      authorUsername: row.authorUsername ?? null,
+      content: row.content,
+      contentHtml: renderMarkdown(row.content),
+      createdAt: row.createdAt,
+    }));
 
-    const problem =
-      inserted ??
-      (await db
-        .select()
-        .from(problems)
-        .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
-        .get());
-
-    if (!problem) {
-      return { status: "create_failed" };
-    }
-
-    return { status: "found", site: problem.site, externalProblemId: problem.externalProblemId };
+    return {
+      status: "found",
+      site: problem!.site,
+      externalProblemId: problem!.externalProblemId,
+      isLoggedIn,
+      translations: translationList,
+    };
   },
   "getProblemData"
 );
@@ -92,6 +144,15 @@ export default function ProblemPage() {
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () => `${displayName()}/${params.externalProblemId}`;
 
+  const foundData = () => {
+    const d = data();
+    return d?.status === "found" ? d : null;
+  };
+
+  // Track selected translation index.
+  const [selectedIdx, setSelectedIdx] = createSignal(0);
+  const selectedTranslation = () => foundData()?.translations[selectedIdx()];
+
   createEffect(() => {
     const d = data();
     if (d?.status === "found") {
@@ -103,7 +164,65 @@ export default function ProblemPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Switch fallback={<p class="text-gray-500">Loading…</p>}>
         <Match when={data()?.status === "found"}>
-          <h1 class="text-3xl font-bold text-gray-900">{heading()}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-8">{heading()}</h1>
+
+          {/* Translations section */}
+          <section class="mb-10">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Translations</h2>
+              <Show when={foundData()?.isLoggedIn}>
+                <A
+                  href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
+                  class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Add translation
+                </A>
+              </Show>
+            </div>
+
+            <Show
+              when={(foundData()?.translations.length ?? 0) > 0}
+              fallback={
+                <p class="text-gray-500 italic">No translations yet.</p>
+              }
+            >
+              {/* Dropdown to pick a translation when there are multiple */}
+              <Show when={(foundData()?.translations.length ?? 0) > 1}>
+                <div class="mb-4">
+                  <label for="translation-select" class="block text-sm font-medium text-gray-700 mb-1">
+                    Select translation
+                  </label>
+                  <select
+                    id="translation-select"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setSelectedIdx(Number(e.currentTarget.value))}
+                    value={selectedIdx()}
+                  >
+                    <For each={foundData()?.translations}>
+                      {(t, i) => (
+                        <option value={i()}>
+                          {t.authorUsername ?? "Anonymous"}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </div>
+              </Show>
+
+              {/* Rendered translation content */}
+              <Show when={selectedTranslation()}>
+                <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+                  <p class="text-xs text-gray-400 mb-3">
+                    By {selectedTranslation()!.authorUsername ?? "Anonymous"}
+                  </p>
+                  <div
+                    class="prose max-w-none"
+                    innerHTML={selectedTranslation()!.contentHtml}
+                  />
+                </div>
+              </Show>
+            </Show>
+          </section>
         </Match>
         <Match when={data()?.status === "not_found"}>
           <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
