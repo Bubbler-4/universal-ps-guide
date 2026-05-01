@@ -1,7 +1,9 @@
+import { createSignal } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect } from "@solidjs/router";
+import { cache, createAsync, redirect, useNavigate } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { SITES, normalizeProblemId } from "~/lib/problems";
 
 const checkSession = cache(async () => {
   "use server";
@@ -20,6 +22,17 @@ export const route = {
 
 export default function Home() {
   createAsync(() => checkSession());
+  const navigate = useNavigate();
+  const [site, setSite] = createSignal(SITES[0].toLowerCase());
+  const [problemId, setProblemId] = createSignal("");
+
+  function handleSearch(e: SubmitEvent) {
+    e.preventDefault();
+    const normalized = normalizeProblemId(problemId());
+    if (!normalized) return;
+    navigate(`/problems/${site()}/${normalized}`);
+  }
+
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
       <div class="text-center">
@@ -31,7 +44,34 @@ export default function Home() {
       </div>
       <div class="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Search a Problem</h2>
-        <p class="text-gray-500">Problem search coming soon…</p>
+        <form onSubmit={handleSearch} class="flex flex-col sm:flex-row gap-3">
+          <select
+            id="site-select"
+            aria-label="Online judge site"
+            value={site()}
+            onChange={(e) => setSite(e.currentTarget.value)}
+            class="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {SITES.map((s) => (
+              <option value={s.toLowerCase()}>{s}</option>
+            ))}
+          </select>
+          <input
+            id="problem-id-input"
+            type="text"
+            aria-label="Problem ID"
+            placeholder="Problem ID (e.g. 1700A)"
+            value={problemId()}
+            onInput={(e) => setProblemId(e.currentTarget.value)}
+            class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+          >
+            Search
+          </button>
+        </form>
       </div>
     </main>
   );
