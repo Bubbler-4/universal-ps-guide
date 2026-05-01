@@ -5,10 +5,10 @@ import { getCloudflareEnv } from "~/server/env";
 
 const checkSession = cache(async () => {
   "use server";
-  const event = getRequestEvent(); console.log("checkSession");
+  const event = getRequestEvent();
   if (!event) return;
   const env = getCloudflareEnv(event);
-  const session = await getServerSession(event.request, env); console.log("checkSession2", session);
+  const session = await getServerSession(event.request, env);
   if (session?.needsUsername) {
     throw redirect("/setup-username");
   }
