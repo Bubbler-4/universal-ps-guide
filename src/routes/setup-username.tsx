@@ -3,6 +3,7 @@ import { getRequestEvent } from "solid-js/web";
 import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { USERNAME_RE } from "~/lib/username";
 
 async function checkSession() {
   "use server";
@@ -22,8 +23,6 @@ export const route = {
   load: () => checkSession(),
 };
 
-const USERNAME_RE = /^[a-zA-Z_-]{3,30}$/;
-
 export default function SetupUsernamePage() {
   const [username, setUsername] = createSignal("");
   const [error, setError] = createSignal<string | null>(null);
@@ -33,7 +32,7 @@ export default function SetupUsernamePage() {
     const u = username().trim();
     if (u.length === 0) return null;
     if (!USERNAME_RE.test(u))
-      return "Must be 3-30 characters: letters, underscores, or hyphens only.";
+      return "Must be 3-30 characters: letters, digits, underscores, or hyphens only.";
     return null;
   };
 
@@ -104,7 +103,7 @@ export default function SetupUsernamePage() {
       </form>
 
       <p class="mt-4 text-xs text-gray-400">
-        Allowed characters: letters (a-z, A-Z), underscores (_), hyphens (-). Length: 3-30.
+        Allowed characters: letters (a-z, A-Z), digits (0-9), underscores (_), hyphens (-). Length: 3-30.
       </p>
     </main>
   );
