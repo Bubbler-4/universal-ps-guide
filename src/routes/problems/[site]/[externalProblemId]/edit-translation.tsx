@@ -18,6 +18,7 @@ type PageData =
       existingContent: string;
     }
   | { status: "no_translation" }
+  | { status: "problem_not_found" }
   | { status: "invalid_params" }
   | { status: "server_error" };
 
@@ -67,7 +68,7 @@ const getEditTranslationData = cache(
       .get();
 
     if (!problem) {
-      return { status: "no_translation" };
+      return { status: "problem_not_found" };
     }
 
     // Find the user's existing active translation.
@@ -186,7 +187,7 @@ export default function EditTranslationPage() {
         </div>
       </Show>
 
-      <Show when={data()?.status === "no_translation"}>
+      <Show when={data()?.status === "no_translation" || data()?.status === "problem_not_found"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
           <h1 class="text-2xl font-bold text-yellow-700 mb-2">No Translation Found</h1>
           <p class="text-yellow-600 mb-4">
