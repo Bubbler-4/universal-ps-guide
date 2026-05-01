@@ -26,7 +26,15 @@ describe("POST /api/problems/resolve", () => {
   });
 
   it("returns 400 when body is not valid JSON", async () => {
-    const event = makeRequestEvent("http://localhost/api/problems/resolve");
+    const event = {
+      params: {},
+      request: new Request("http://localhost/api/problems/resolve", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{invalid-json",
+      }),
+      nativeEvent: { context: {} },
+    };
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
     const body = await res.json();
