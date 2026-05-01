@@ -3,6 +3,7 @@ import { getRequestEvent } from "solid-js/web";
 import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { USERNAME_RE } from "~/lib/username";
 
 async function checkSession() {
   "use server";
@@ -21,8 +22,6 @@ async function checkSession() {
 export const route = {
   load: () => checkSession(),
 };
-
-const USERNAME_RE = /^[a-zA-Z0-9_-]{3,30}$/;
 
 export default function SetupUsernamePage() {
   const [username, setUsername] = createSignal("");
