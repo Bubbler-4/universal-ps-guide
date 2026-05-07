@@ -23,6 +23,7 @@ type ProblemResult =
       status: "found";
       site: string;
       externalProblemId: string;
+      externalProblemLink: string | null;
       isLoggedIn: boolean;
       currentUserDbId: number | null;
       translations: TranslationWithAuthor[];
@@ -93,6 +94,11 @@ const getProblemData = cache(
       }
     }
 
+    // Redirect logged-in users to the set-link page when the problem has no link.
+    if (isLoggedIn && !problem.externalProblemLink) {
+      throw redirect(`/problems/${normalizedSite}/${normalizedId}/set-link`);
+    }
+
     // Fetch active translations with author usernames.
     const rows = await db
       .select({
@@ -127,6 +133,7 @@ const getProblemData = cache(
       status: "found",
       site: problem!.site,
       externalProblemId: problem!.externalProblemId,
+      externalProblemLink: problem!.externalProblemLink ?? null,
       isLoggedIn,
       currentUserDbId,
       translations: translationList,
@@ -227,7 +234,21 @@ export default function ProblemPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Switch fallback={<p class="text-gray-500">Loading…</p>}>
         <Match when={data()?.status === "found"}>
-          <h1 class="text-3xl font-bold text-gray-900 mb-8">{heading()}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-4">{heading()}</h1>
+
+          {/* External problem link (logged-in users only) */}
+          <Show when={foundData()?.isLoggedIn && foundData()?.externalProblemLink}>
+            <div class="mb-8">
+              <a
+                href={foundData()!.externalProblemLink!}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                View original problem ↗
+              </a>
+            </div>
+          </Show>
 
           {/* Translations section */}
           <section class="mb-10">
