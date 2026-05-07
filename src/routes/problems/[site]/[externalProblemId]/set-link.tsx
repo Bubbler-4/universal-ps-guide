@@ -85,6 +85,11 @@ export default function SetLinkPage() {
   const [submitting, setSubmitting] = createSignal(false);
   const [submitError, setSubmitError] = createSignal<string | null>(null);
 
+  const okData = () => {
+    const d = data();
+    return d?.status === "ok" ? d : null;
+  };
+
   // Pre-fill the input with the current link when the page loads.
   createEffect(() => {
     const d = data();
@@ -173,6 +178,12 @@ export default function SetLinkPage() {
       <Show when={data()?.status === "ok"}>
         <h1 class="text-2xl font-bold text-gray-900 mb-6">{heading()}</h1>
 
+        <Show when={okData()?.currentLink === null}>
+          <div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6 text-blue-800">
+            This problem page does not exist yet. Please enter the following information to create the page.
+          </div>
+        </Show>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -202,12 +213,6 @@ export default function SetLinkPage() {
             >
               {submitting() ? "Saving…" : "Save link"}
             </button>
-            <A
-              href={`/problems/${params.site}/${params.externalProblemId}`}
-              class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
-            >
-              Cancel
-            </A>
           </div>
 
           <Show when={submitError()}>
