@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, type TestDb } from "./helpers";
+import { createTestDb, makeRequestEvent, seedProblems, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so POST() uses the in-memory Drizzle instance.
@@ -178,21 +178,25 @@ describe("POST /api/problems/resolve", () => {
     expect(row).toBeTruthy();
   });
 
-  it("returns the existing problem and updates the link when called again with the same site+id", async () => {
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id, external_problem_link) VALUES (42, 'atcoder', 'abc300_c', 'https://atcoder.jp/contests/abc300/tasks/abc300_c')`
-    );
+  it("returns the existing problem and updates the link when called with a new link for the same site+id", async () => {
+    seedProblems(sqlite, [
+      { id: 42, site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
 
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "atcoder",
       externalProblemId: "abc300_c",
-      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c",
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.problem.id).toBe(42);
-    expect(body.problem).toMatchObject({ site: "atcoder", externalProblemId: "abc300_c" });
+    expect(body.problem).toMatchObject({
+      site: "atcoder",
+      externalProblemId: "abc300_c",
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
+    });
 
     // Only one row should exist
     const count = (
@@ -201,6 +205,12 @@ describe("POST /api/problems/resolve", () => {
         .get() as { c: number }
     ).c;
     expect(count).toBe(1);
+
+    // Verify the link was actually updated in the DB
+    const row = sqlite
+      .prepare("SELECT external_problem_link FROM problems WHERE id = 42")
+      .get() as { external_problem_link: string };
+    expect(row.external_problem_link).toBe("https://atcoder.jp/contests/abc300/tasks/abc300_c_new");
   });
 
   it("trims whitespace from site, externalProblemId and externalProblemLink", async () => {

@@ -54,6 +54,32 @@ export function createTestDb(): { db: TestDb; sqlite: Database.Database } {
   return { db, sqlite };
 }
 
+/** Seed one or more problem rows using parameterized statements (avoids SQL injection). */
+export function seedProblems(
+  sqlite: Database.Database,
+  rows: Array<{
+    id?: number;
+    site: string;
+    externalProblemId: string;
+    externalProblemLink: string;
+    status?: string;
+  }>
+): void {
+  const stmt = sqlite.prepare(
+    `INSERT INTO problems (id, site, external_problem_id, external_problem_link, status)
+     VALUES (?, ?, ?, ?, ?)`
+  );
+  for (const row of rows) {
+    stmt.run(
+      row.id ?? null,
+      row.site,
+      row.externalProblemId,
+      row.externalProblemLink,
+      row.status ?? "active"
+    );
+  }
+}
+
 /** Seed one or more translation rows using parameterized statements (avoids SQL injection). */
 export function seedTranslations(
   sqlite: Database.Database,

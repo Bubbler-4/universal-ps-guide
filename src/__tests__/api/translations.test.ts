@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
+import { createTestDb, makeRequestEvent, seedProblems, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 import type { AppSession } from "~/lib/auth";
 
@@ -88,9 +88,9 @@ describe("GET /api/translations", () => {
 
   it("returns active translations for an existing problem", async () => {
     sqlite.exec(`INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('atcoder', 'abc300_c', 'https://atcoder.jp/contests/abc300/tasks/abc300_c')`
-    );
+    seedProblems(sqlite, [
+      { site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     const userId = (sqlite.prepare("SELECT id FROM users LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [{ problemId, userId, content: "Hello" }]);
@@ -107,9 +107,9 @@ describe("GET /api/translations", () => {
 
   it("excludes non-active translations", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('atcoder', 'abc300_c', 'https://atcoder.jp/contests/abc300/tasks/abc300_c')`
-    );
+    seedProblems(sqlite, [
+      { site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
       { problemId, userId: 1, content: "Active", status: "active" },
@@ -127,9 +127,9 @@ describe("GET /api/translations", () => {
 
   it("excludes soft-deleted translations", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('atcoder', 'abc300_c', 'https://atcoder.jp/contests/abc300/tasks/abc300_c')`
-    );
+    seedProblems(sqlite, [
+      { site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
       { problemId, userId: 1, content: "Live", deletedAt: null },
@@ -147,9 +147,9 @@ describe("GET /api/translations", () => {
 
   it("returns translations ordered by createdAt ascending", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('atcoder', 'abc300_c', 'https://atcoder.jp/contests/abc300/tasks/abc300_c')`
-    );
+    seedProblems(sqlite, [
+      { site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
       { problemId, userId: 1, content: "First", createdAt: "2024-03-01 00:00:00" },
@@ -259,9 +259,9 @@ describe("POST /api/translations", () => {
 
   it("creates a translation for an existing problem, returning 201", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (99, 'bob', 'bob@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
-    );
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
     mockSession = makeSession(99);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
@@ -296,9 +296,9 @@ describe("POST /api/translations", () => {
 
   it("uses existing problem when it already exists", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (5, 'carol', 'carol@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id, external_problem_link) VALUES (77, 'qoj', '1234', 'https://qoj.ac/problem/1234')`
-    );
+    seedProblems(sqlite, [
+      { id: 77, site: "qoj", externalProblemId: "1234", externalProblemLink: "https://qoj.ac/problem/1234" },
+    ]);
     mockSession = makeSession(5);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
@@ -322,9 +322,9 @@ describe("POST /api/translations", () => {
 
   it("trims whitespace from site, externalProblemId, and content", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (3, 'dave', 'dave@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
-    );
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
     mockSession = makeSession(3);
 
     const event = makeRequestEvent("http://localhost/api/translations", {
@@ -340,9 +340,9 @@ describe("POST /api/translations", () => {
 
   it("returns 409 and preserves first content when same author POSTs again for same problem", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (7, 'eve', 'eve@example.com')`);
-    sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '800A', 'https://codeforces.com/problemset/problem/800/A')`
-    );
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "800A", externalProblemLink: "https://codeforces.com/problemset/problem/800/A" },
+    ]);
     mockSession = makeSession(7);
 
     const firstEvent = makeRequestEvent("http://localhost/api/translations", {
