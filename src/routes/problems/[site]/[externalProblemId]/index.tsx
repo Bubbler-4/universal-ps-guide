@@ -304,7 +304,7 @@ export default function ProblemPage() {
                     <p class="text-sm text-red-600 mb-2">{deleteError()}</p>
                   </Show>
                   <div
-                    class="prose max-w-none"
+                    class="markdown-content"
                     innerHTML={selectedTranslation()!.contentHtml}
                   />
                 </div>
