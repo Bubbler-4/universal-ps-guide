@@ -3,11 +3,15 @@ import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useParams, A } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { getDb } from "~/db";
+import { problems } from "~/db/schema";
+import { and, eq } from "drizzle-orm";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
 
 type PageData =
   | { status: "ok"; site: string; externalProblemId: string }
+  | { status: "not_found" }
   | { status: "invalid_params" }
   | { status: "server_error" };
 
@@ -37,6 +41,19 @@ const getAddSolutionData = cache(
 
     if (site !== normalizedSite || externalProblemId !== normalizedId) {
       throw redirect(`/problems/${normalizedSite}/${normalizedId}/add-solution`, 301);
+    }
+
+    const db = getDb(env.DB as never);
+    const problem = await db
+      .select({ id: problems.id })
+      .from(problems)
+      .where(
+        and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId))
+      )
+      .get();
+
+    if (!problem) {
+      return { status: "not_found" };
     }
 
     return {
@@ -123,6 +140,13 @@ export default function AddSolutionPage() {
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
           <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
           <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+        </div>
+      </Show>
+
+      <Show when={data()?.status === "not_found"}>
+        <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-red-700 mb-2">Problem Not Found</h1>
+          <p class="text-red-600">This problem does not exist yet.</p>
         </div>
       </Show>
 

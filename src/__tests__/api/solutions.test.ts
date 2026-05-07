@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, seedProblems, seedSolutions, type TestDb, type TestApiEvent } from "./helpers";
+import { createTestDb, makeRequestEvent, makeSession, seedProblems, seedSolutions, type TestDb, type TestApiEvent } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 import type { AppSession } from "~/lib/auth";
 
@@ -19,18 +19,6 @@ vi.mock("~/server/env", () => ({
 }));
 
 const { GET, POST } = await import("~/routes/api/solutions/index");
-
-function makeSession(dbUserId: number): AppSession {
-  return {
-    githubId: "gh123",
-    email: "test@example.com",
-    name: "Test User",
-    image: "",
-    username: "testuser",
-    dbUserId,
-    needsUsername: false,
-  };
-}
 
 describe("GET /api/solutions", () => {
   let sqlite: Database.Database;
@@ -275,8 +263,8 @@ describe("POST /api/solutions", () => {
       content: "Second solution",
     });
 
-    const firstRes = await POST(firstEvent as unknown as APIEvent);
-    const secondRes = await POST(secondEvent as unknown as APIEvent);
+    const firstRes = await POST(firstEvent as APIEvent);
+    const secondRes = await POST(secondEvent as APIEvent);
 
     expect(firstRes.status).toBe(201);
     expect(secondRes.status).toBe(201);

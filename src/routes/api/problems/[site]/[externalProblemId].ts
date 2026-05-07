@@ -62,6 +62,8 @@ export async function GET(event: APIEvent) {
     .orderBy(asc(solutions.createdAt))
     .all();
 
+  // The expected number of solutions per problem is small, so returning the
+  // full active list here keeps the problem page simple.
   return new Response(JSON.stringify({ problem, translations: rows, solutions: solutionRows }), {
     headers: { "Content-Type": "application/json" },
   });

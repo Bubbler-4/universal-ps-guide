@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "~/db/schema";
+import type { AppSession } from "~/lib/auth";
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
@@ -147,6 +148,18 @@ export function seedSolutions(
       row.deletedAt ?? null
     );
   }
+}
+
+export function makeSession(dbUserId: number): AppSession {
+  return {
+    githubId: "gh123",
+    email: "test@example.com",
+    name: "Test User",
+    image: "",
+    username: "testuser",
+    dbUserId,
+    needsUsername: false,
+  };
 }
 
 export type TestApiEvent = {

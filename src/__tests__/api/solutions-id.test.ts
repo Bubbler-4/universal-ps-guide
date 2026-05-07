@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, seedProblems, seedSolutions, type TestDb } from "./helpers";
+import { createTestDb, makeSession, seedProblems, seedSolutions, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 import type { AppSession } from "~/lib/auth";
 
@@ -36,18 +36,6 @@ function makeIdEvent(
           })
         : new Request(`http://localhost/api/solutions/${id}`, { method }),
     nativeEvent: { context: {} } as unknown as APIEvent["nativeEvent"],
-  };
-}
-
-function makeSession(dbUserId: number): AppSession {
-  return {
-    githubId: "gh123",
-    email: "test@example.com",
-    name: "Test User",
-    image: "",
-    username: "testuser",
-    dbUserId,
-    needsUsername: false,
   };
 }
 

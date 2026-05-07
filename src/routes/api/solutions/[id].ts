@@ -69,9 +69,22 @@ export async function PUT(event: APIEvent) {
   const updated = await db
     .update(solutions)
     .set({ content: content.trim(), updatedAt: sql`(datetime('now'))` })
-    .where(eq(solutions.id, id))
+    .where(
+      and(
+        eq(solutions.id, id),
+        eq(solutions.authorId, session.dbUserId),
+        isNull(solutions.deletedAt)
+      )
+    )
     .returning()
     .get();
+
+  if (!updated) {
+    return new Response(JSON.stringify({ error: "Solution not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   return new Response(JSON.stringify({ solution: updated }), {
     headers: { "Content-Type": "application/json" },
@@ -122,11 +135,25 @@ export async function DELETE(event: APIEvent) {
     });
   }
 
-  await db
+  const deleted = await db
     .update(solutions)
     .set({ deletedAt: sql`(datetime('now'))` })
-    .where(eq(solutions.id, id))
-    .run();
+    .where(
+      and(
+        eq(solutions.id, id),
+        eq(solutions.authorId, session.dbUserId),
+        isNull(solutions.deletedAt)
+      )
+    )
+    .returning({ id: solutions.id })
+    .get();
+
+  if (!deleted) {
+    return new Response(JSON.stringify({ error: "Solution not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   return new Response(JSON.stringify({ success: true }), {
     headers: { "Content-Type": "application/json" },
