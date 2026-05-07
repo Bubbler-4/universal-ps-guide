@@ -88,8 +88,8 @@ export default function SetLinkPage() {
   // Pre-fill the input with the current link when the page loads.
   createEffect(() => {
     const d = data();
-    if (d?.status === "ok" && d.currentLink) {
-      setLink(d.currentLink);
+    if (d?.status === "ok") {
+      setLink(d.currentLink ?? "");
     }
   });
 
