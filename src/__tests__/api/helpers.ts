@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS problems (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   site TEXT NOT NULL,
   external_problem_id TEXT NOT NULL,
+  external_problem_link TEXT,
   status TEXT NOT NULL DEFAULT 'active',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
