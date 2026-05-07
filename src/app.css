@@ -87,6 +87,8 @@ body {
 
 .markdown-content table {
   @apply w-full border-collapse border border-gray-300 text-sm;
+  display: block;
+  overflow-x: auto;
 }
 
 .markdown-content th,
