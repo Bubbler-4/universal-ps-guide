@@ -13,7 +13,7 @@ type PageData =
       status: "ok";
       site: string;
       externalProblemId: string;
-      currentLink: string | null;
+      currentLink: string;
     }
   | { status: "problem_not_found" }
   | { status: "invalid_params" }
@@ -63,7 +63,7 @@ const getSetLinkData = cache(
       status: "ok",
       site: normalizedSite,
       externalProblemId: normalizedId,
-      currentLink: problem.externalProblemLink ?? null,
+      currentLink: problem.externalProblemLink,
     };
   },
   "getSetLinkData"
@@ -85,16 +85,11 @@ export default function SetLinkPage() {
   const [submitting, setSubmitting] = createSignal(false);
   const [submitError, setSubmitError] = createSignal<string | null>(null);
 
-  const okData = () => {
-    const d = data();
-    return d?.status === "ok" ? d : null;
-  };
-
   // Pre-fill the input with the current link when the page loads.
   createEffect(() => {
     const d = data();
     if (d?.status === "ok") {
-      setLink(d.currentLink ?? "");
+      setLink(d.currentLink);
     }
   });
 
@@ -177,12 +172,6 @@ export default function SetLinkPage() {
 
       <Show when={data()?.status === "ok"}>
         <h1 class="text-2xl font-bold text-gray-900 mb-6">{heading()}</h1>
-
-        <Show when={okData()?.currentLink === null}>
-          <div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6 text-blue-800">
-            This problem page does not exist yet. Please enter the following information to create the page.
-          </div>
-        </Show>
 
         <form
           onSubmit={(e) => {
