@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeParamEvent, seedProblems, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
+import { createTestDb, makeParamEvent, seedProblems, seedSolutions, seedTranslations, type TestDb, type TestApiEvent } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so GET() uses the in-memory Drizzle instance.
@@ -33,7 +33,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     expect(body).toHaveProperty("error");
   });
 
-  it("returns problem and empty translations when problem exists with no translations", async () => {
+  it("returns problem and empty content lists when problem exists with no translations or solutions", async () => {
     seedProblems(sqlite, [
       { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
     ]);
@@ -43,6 +43,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     const body = await res.json();
     expect(body.problem).toMatchObject({ site: "codeforces", externalProblemId: "1700A" });
     expect(body.translations).toEqual([]);
+    expect(body.solutions).toEqual([]);
   });
 
   it("returns active translations ordered by createdAt ascending", async () => {
@@ -100,6 +101,25 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     const body = await res.json();
     expect(body.translations).toHaveLength(1);
     expect(body.translations[0].content).toBe("Active");
+  });
+
+  it("returns active solutions ordered by createdAt ascending", async () => {
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
+    const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
+    seedSolutions(sqlite, [
+      { problemId, userId: 1, content: "Solution A", createdAt: "2024-01-01 00:00:00" },
+      { problemId, userId: 2, content: "Solution B", createdAt: "2024-01-02 00:00:00" },
+    ]);
+
+    const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
+    const res = await GET(event as APIEvent);
+    const body = await res.json();
+    expect(body.solutions).toHaveLength(2);
+    expect(body.solutions[0].content).toBe("Solution A");
+    expect(body.solutions[1].content).toBe("Solution B");
   });
 
   it("returns 400 when site param is empty", async () => {

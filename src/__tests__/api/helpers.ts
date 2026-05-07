@@ -41,6 +41,19 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 CREATE INDEX IF NOT EXISTS translations_problem_id_idx ON translations (problem_id);
+
+CREATE TABLE IF NOT EXISTS solutions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  problem_id INTEGER NOT NULL REFERENCES problems(id),
+  author_id INTEGER NOT NULL REFERENCES users(id),
+  content TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  deleted_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS solutions_problem_id_idx ON solutions (problem_id);
 `;
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -108,6 +121,34 @@ export function seedTranslations(
   }
 }
 
+/** Seed one or more solution rows using parameterized statements (avoids SQL injection). */
+export function seedSolutions(
+  sqlite: Database.Database,
+  rows: Array<{
+    problemId: number;
+    userId: number;
+    content: string;
+    status?: string;
+    createdAt?: string;
+    deletedAt?: string | null;
+  }>
+): void {
+  const stmt = sqlite.prepare(
+    `INSERT INTO solutions (problem_id, author_id, content, status, created_at, deleted_at)
+     VALUES (?, ?, ?, ?, COALESCE(?, datetime('now')), ?)`
+  );
+  for (const row of rows) {
+    stmt.run(
+      row.problemId,
+      row.userId,
+      row.content,
+      row.status ?? "active",
+      row.createdAt ?? null,
+      row.deletedAt ?? null
+    );
+  }
+}
+
 export type TestApiEvent = {
   params: Record<string, string>;
   request: Request;
@@ -138,4 +179,3 @@ export function makeRequestEvent(url: string, body?: unknown): TestApiEvent {
     nativeEvent: { context: {} },
   };
 }
-

@@ -1,5 +1,5 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { problems, translations } from "~/db/schema";
+import { problems, solutions, translations } from "~/db/schema";
 import { eq, and, isNull, asc, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
@@ -7,7 +7,7 @@ import { getCloudflareEnv } from "~/server/env";
 
 /**
  * GET /api/problems/:site/:externalProblemId
- * Returns problem details together with all active translations.
+ * Returns problem details together with all active translations and solutions.
  */
 export async function GET(event: APIEvent) {
   const { site, externalProblemId } = event.params;
@@ -49,7 +49,20 @@ export async function GET(event: APIEvent) {
     .orderBy(asc(translations.createdAt))
     .all();
 
-  return new Response(JSON.stringify({ problem, translations: rows }), {
+  const solutionRows = await db
+    .select()
+    .from(solutions)
+    .where(
+      and(
+        eq(solutions.problemId, problem.id),
+        eq(solutions.status, "active"),
+        isNull(solutions.deletedAt)
+      )
+    )
+    .orderBy(asc(solutions.createdAt))
+    .all();
+
+  return new Response(JSON.stringify({ problem, translations: rows, solutions: solutionRows }), {
     headers: { "Content-Type": "application/json" },
   });
 }
