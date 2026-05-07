@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, makeRequestEvent, type TestDb } from "./helpers";
+import { createTestDb, makeRequestEvent, seedProblems, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 
 // Mock the server/db module so POST() uses the in-memory Drizzle instance.
@@ -52,6 +52,7 @@ describe("POST /api/problems/resolve", () => {
   it("returns 400 when site is missing", async () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -62,6 +63,18 @@ describe("POST /api/problems/resolve", () => {
   it("returns 400 when externalProblemId is missing", async () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "codeforces",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink is missing", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -73,6 +86,7 @@ describe("POST /api/problems/resolve", () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: 42,
       externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -84,6 +98,7 @@ describe("POST /api/problems/resolve", () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "   ",
       externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -95,6 +110,43 @@ describe("POST /api/problems/resolve", () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "codeforces",
       externalProblemId: "   ",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink is an empty string", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      externalProblemLink: "   ",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink is not a valid URL", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      externalProblemLink: "not-a-url",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink uses a non-http/https scheme", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      externalProblemLink: "ftp://example.com/problem",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(400);
@@ -106,6 +158,7 @@ describe("POST /api/problems/resolve", () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "codeforces",
       externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(200);
@@ -113,6 +166,7 @@ describe("POST /api/problems/resolve", () => {
     expect(body.problem).toMatchObject({
       site: "codeforces",
       externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
       status: "active",
     });
     expect(typeof body.problem.id).toBe("number");
@@ -124,20 +178,25 @@ describe("POST /api/problems/resolve", () => {
     expect(row).toBeTruthy();
   });
 
-  it("returns the existing problem when called again with the same site+id", async () => {
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (42, 'atcoder', 'abc300_c')`
-    );
+  it("returns the existing problem and updates the link when called with a new link for the same site+id", async () => {
+    seedProblems(sqlite, [
+      { id: 42, site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
 
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "atcoder",
       externalProblemId: "abc300_c",
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.problem.id).toBe(42);
-    expect(body.problem).toMatchObject({ site: "atcoder", externalProblemId: "abc300_c" });
+    expect(body.problem).toMatchObject({
+      site: "atcoder",
+      externalProblemId: "abc300_c",
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
+    });
 
     // Only one row should exist
     const count = (
@@ -146,17 +205,28 @@ describe("POST /api/problems/resolve", () => {
         .get() as { c: number }
     ).c;
     expect(count).toBe(1);
+
+    // Verify the link was actually updated in the DB
+    const row = sqlite
+      .prepare("SELECT external_problem_link FROM problems WHERE id = 42")
+      .get() as { external_problem_link: string };
+    expect(row.external_problem_link).toBe("https://atcoder.jp/contests/abc300/tasks/abc300_c_new");
   });
 
-  it("trims whitespace from site and externalProblemId", async () => {
+  it("trims whitespace from site, externalProblemId and externalProblemLink", async () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "  qoj  ",
       externalProblemId: "  1234  ",
+      externalProblemLink: "  https://qoj.ac/problem/1234  ",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.problem).toMatchObject({ site: "qoj", externalProblemId: "1234" });
+    expect(body.problem).toMatchObject({
+      site: "qoj",
+      externalProblemId: "1234",
+      externalProblemLink: "https://qoj.ac/problem/1234",
+    });
 
     const row = sqlite
       .prepare("SELECT * FROM problems WHERE site = 'qoj' AND external_problem_id = '1234'")

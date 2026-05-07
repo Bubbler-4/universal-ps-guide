@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { createTestDb, seedTranslations, type TestDb } from "./helpers";
+import { createTestDb, seedProblems, seedTranslations, type TestDb } from "./helpers";
 import type { APIEvent } from "@solidjs/start/server";
 import type { AppSession } from "~/lib/auth";
 
@@ -111,9 +111,9 @@ describe("PUT /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (10, 'codeforces', '1700A')`
-    );
+    seedProblems(sqlite, [
+      { id: 10, site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
     seedTranslations(sqlite, [{ problemId: 10, userId: 2, content: "Bob's translation" }]);
     const translationId = (
       sqlite.prepare("SELECT id FROM translations LIMIT 1").get() as { id: number }
@@ -130,9 +130,9 @@ describe("PUT /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (5, 'carol', 'carol@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (20, 'atcoder', 'abc300_c')`
-    );
+    seedProblems(sqlite, [
+      { id: 20, site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
     seedTranslations(sqlite, [{ problemId: 20, userId: 5, content: "Original" }]);
     const translationId = (
       sqlite.prepare("SELECT id FROM translations LIMIT 1").get() as { id: number }
@@ -156,9 +156,9 @@ describe("PUT /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (6, 'dave', 'dave@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (30, 'codeforces', '800A')`
-    );
+    seedProblems(sqlite, [
+      { id: 30, site: "codeforces", externalProblemId: "800A", externalProblemLink: "https://codeforces.com/problemset/problem/800/A" },
+    ]);
     seedTranslations(sqlite, [
       { problemId: 30, userId: 6, content: "Gone", deletedAt: "2025-01-01 00:00:00" },
     ]);
@@ -209,9 +209,9 @@ describe("DELETE /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (10, 'codeforces', '1700A')`
-    );
+    seedProblems(sqlite, [
+      { id: 10, site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
     seedTranslations(sqlite, [{ problemId: 10, userId: 2, content: "Bob's translation" }]);
     const translationId = (
       sqlite.prepare("SELECT id FROM translations LIMIT 1").get() as { id: number }
@@ -226,9 +226,9 @@ describe("DELETE /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (7, 'eve', 'eve@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (40, 'qoj', '1234')`
-    );
+    seedProblems(sqlite, [
+      { id: 40, site: "qoj", externalProblemId: "1234", externalProblemLink: "https://qoj.ac/problem/1234" },
+    ]);
     seedTranslations(sqlite, [{ problemId: 40, userId: 7, content: "To be deleted" }]);
     const translationId = (
       sqlite.prepare("SELECT id FROM translations LIMIT 1").get() as { id: number }
@@ -251,9 +251,9 @@ describe("DELETE /api/translations/:id", () => {
     sqlite.exec(
       `INSERT INTO users (id, username, email) VALUES (8, 'frank', 'frank@example.com')`
     );
-    sqlite.exec(
-      `INSERT INTO problems (id, site, external_problem_id) VALUES (50, 'codeforces', '900A')`
-    );
+    seedProblems(sqlite, [
+      { id: 50, site: "codeforces", externalProblemId: "900A", externalProblemLink: "https://codeforces.com/problemset/problem/900/A" },
+    ]);
     seedTranslations(sqlite, [
       { problemId: 50, userId: 8, content: "Already gone", deletedAt: "2025-01-01 00:00:00" },
     ]);

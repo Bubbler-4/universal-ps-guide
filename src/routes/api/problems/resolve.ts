@@ -1,12 +1,11 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { problems } from "~/db/schema";
-import { eq, and } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 
 /**
  * POST /api/problems/resolve
- * Body: { site: string, externalProblemId: string }
- * Upserts the problem row and returns it.
+ * Body: { site: string, externalProblemId: string, externalProblemLink: string }
+ * Upserts the problem row (updating the link on conflict) and returns it.
  */
 export async function POST(event: APIEvent) {
   const body = await event.request.json().catch(() => null);
@@ -18,12 +17,17 @@ export async function POST(event: APIEvent) {
     });
   }
 
-  const { site, externalProblemId } = body as Record<string, unknown>;
+  const { site, externalProblemId, externalProblemLink } = body as Record<string, unknown>;
 
-  if (typeof site !== "string" || typeof externalProblemId !== "string") {
+  if (
+    typeof site !== "string" ||
+    typeof externalProblemId !== "string" ||
+    typeof externalProblemLink !== "string"
+  ) {
     return new Response(
       JSON.stringify({
-        error: "Body must include: site (string), externalProblemId (string)",
+        error:
+          "Body must include: site (string), externalProblemId (string), externalProblemLink (string)",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
@@ -31,6 +35,7 @@ export async function POST(event: APIEvent) {
 
   const trimmedSite = site.trim();
   const trimmedId = externalProblemId.trim();
+  const trimmedLink = externalProblemLink.trim();
 
   if (!trimmedSite || !trimmedId) {
     return new Response(
@@ -39,30 +44,42 @@ export async function POST(event: APIEvent) {
     );
   }
 
+  if (!trimmedLink) {
+    return new Response(
+      JSON.stringify({ error: "externalProblemLink must not be empty" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(trimmedLink);
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "externalProblemLink must be a valid URL" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    return new Response(
+      JSON.stringify({ error: "externalProblemLink must use http or https" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const db = getD1(event);
 
-  // Attempt an atomic insert and return the new row in one round-trip.
-  // If the row already exists (unique conflict), the insert is silently
-  // ignored and `inserted` will be undefined, so we fall back to a SELECT.
-  const inserted = await db
+  // Upsert: insert or update the link on conflict.
+  const problem = await db
     .insert(problems)
-    .values({ site: trimmedSite, externalProblemId: trimmedId })
-    .onConflictDoNothing()
+    .values({ site: trimmedSite, externalProblemId: trimmedId, externalProblemLink: trimmedLink })
+    .onConflictDoUpdate({
+      target: [problems.site, problems.externalProblemId],
+      set: { externalProblemLink: trimmedLink },
+    })
     .returning()
     .get();
-
-  const problem =
-    inserted ??
-    (await db
-      .select()
-      .from(problems)
-      .where(
-        and(
-          eq(problems.site, trimmedSite),
-          eq(problems.externalProblemId, trimmedId)
-        )
-      )
-      .get());
 
   if (!problem) {
     return new Response(JSON.stringify({ error: "Failed to resolve problem" }), {
