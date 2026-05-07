@@ -156,7 +156,7 @@ export default function AddTranslationPage() {
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
                 placeholder="Write your translation here. Use $...$ for inline math and $$...$$ for block math."
-                class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
               />
             </div>
 
@@ -188,7 +188,7 @@ export default function AddTranslationPage() {
               <div>
                 <h2 class="text-lg font-semibold text-gray-800 mb-2">Preview</h2>
                 <div
-                  class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm prose max-w-none"
+                  class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
                   innerHTML={previewHtml()!}
                 />
               </div>
