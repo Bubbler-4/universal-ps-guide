@@ -206,7 +206,7 @@ export default function SetLinkPage() {
           </div>
 
           <Show when={submitError()}>
-            <p class="text-sm text-red-600">{submitError()}</p>
+            <p role="alert" class="text-sm text-red-600">{submitError()}</p>
           </Show>
         </div>
       </Show>
