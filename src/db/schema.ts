@@ -97,7 +97,7 @@ export const problems = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     site: text("site").notNull(),
     externalProblemId: text("external_problem_id").notNull(),
-    externalProblemLink: text("external_problem_link"),
+    externalProblemLink: text("external_problem_link").notNull(),
     status: text("status", { enum: ["active", "hidden", "flagged"] })
       .notNull()
       .default("active"),

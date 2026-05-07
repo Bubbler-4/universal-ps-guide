@@ -69,7 +69,7 @@ export async function GET(event: APIEvent) {
  * POST /api/translations
  * Body: { site, externalProblemId, content }
  * The author is derived from the authenticated session.
- * Creates a new translation, upserting the problem if it doesn't exist yet.
+ * Creates a new translation for an existing problem.
  */
 export async function POST(event: APIEvent) {
   // Authenticate via session; authorId is never trusted from the client.
@@ -116,13 +116,6 @@ export async function POST(event: APIEvent) {
 
   const db = getD1(event);
 
-  // Upsert the problem
-  await db
-    .insert(problems)
-    .values({ site: site.trim(), externalProblemId: externalProblemId.trim() })
-    .onConflictDoNothing()
-    .run();
-
   const problem = await db
     .select({ id: problems.id })
     .from(problems)
@@ -135,8 +128,8 @@ export async function POST(event: APIEvent) {
     .get();
 
   if (!problem) {
-    return new Response(JSON.stringify({ error: "Failed to resolve problem" }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: "Problem not found" }), {
+      status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }

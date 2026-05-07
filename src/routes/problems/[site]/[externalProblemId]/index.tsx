@@ -23,15 +23,14 @@ type ProblemResult =
       status: "found";
       site: string;
       externalProblemId: string;
-      externalProblemLink: string | null;
+      externalProblemLink: string;
       isLoggedIn: boolean;
       currentUserDbId: number | null;
       translations: TranslationWithAuthor[];
     }
   | { status: "not_found" }
   | { status: "invalid_params" }
-  | { status: "server_error" }
-  | { status: "create_failed" };
+  | { status: "server_error" };
 
 const getProblemData = cache(
   async (site: string, externalProblemId: string): Promise<ProblemResult> => {
@@ -66,38 +65,11 @@ const getProblemData = cache(
       .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
       .get();
 
-    let problem = existing;
-
     if (!existing) {
-      if (!isLoggedIn) {
-        return { status: "not_found" };
-      }
-
-      // Logged-in user: create the problem and show the page.
-      const inserted = await db
-        .insert(problems)
-        .values({ site: normalizedSite, externalProblemId: normalizedId })
-        .onConflictDoNothing()
-        .returning()
-        .get();
-
-      problem =
-        inserted ??
-        (await db
-          .select()
-          .from(problems)
-          .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
-          .get());
-
-      if (!problem) {
-        return { status: "create_failed" };
-      }
+      return { status: "not_found" };
     }
 
-    // Redirect logged-in users to the set-link page when the problem has no link.
-    if (isLoggedIn && !problem.externalProblemLink) {
-      throw redirect(`/problems/${normalizedSite}/${normalizedId}/set-link`);
-    }
+    const problem = existing;
 
     // Fetch active translations with author usernames.
     const rows = await db
@@ -112,7 +84,7 @@ const getProblemData = cache(
       .leftJoin(users, eq(users.id, translations.authorId))
       .where(
         and(
-          eq(translations.problemId, problem!.id),
+          eq(translations.problemId, problem.id),
           eq(translations.status, "active"),
           isNull(translations.deletedAt)
         )
@@ -131,9 +103,9 @@ const getProblemData = cache(
 
     return {
       status: "found",
-      site: problem!.site,
-      externalProblemId: problem!.externalProblemId,
-      externalProblemLink: problem!.externalProblemLink ?? null,
+      site: problem.site,
+      externalProblemId: problem.externalProblemId,
+      externalProblemLink: problem.externalProblemLink,
       isLoggedIn,
       currentUserDbId,
       translations: translationList,
@@ -237,10 +209,10 @@ export default function ProblemPage() {
           <h1 class="text-3xl font-bold text-gray-900 mb-4">{heading()}</h1>
 
           {/* External problem link (logged-in users only) */}
-          <Show when={foundData()?.isLoggedIn && foundData()?.externalProblemLink}>
+          <Show when={foundData()?.isLoggedIn}>
             <div class="mb-8">
               <a
-                href={foundData()!.externalProblemLink!}
+                href={foundData()!.externalProblemLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
@@ -337,15 +309,7 @@ export default function ProblemPage() {
           <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h1 class="text-2xl font-bold text-red-700 mb-2">Problem Not Found</h1>
             <p class="text-red-600">
-              This problem does not exist yet. Sign in to create it.
-            </p>
-          </div>
-        </Match>
-        <Match when={data()?.status === "create_failed"}>
-          <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-red-700 mb-2">Failed to Create Problem</h1>
-            <p class="text-red-600">
-              Something went wrong while creating the problem. Please try again.
+              This problem does not exist yet.
             </p>
           </div>
         </Match>

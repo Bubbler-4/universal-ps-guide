@@ -86,7 +86,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("returns 400 when externalProblemLink is missing from body", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", {});
     const res = await PATCH(event as APIEvent);
@@ -97,7 +97,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("returns 400 when externalProblemLink is not a valid URL", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", { externalProblemLink: "not-a-url" });
     const res = await PATCH(event as APIEvent);
@@ -108,7 +108,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("returns 400 when externalProblemLink uses a non-http/https scheme", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", {
       externalProblemLink: "ftp://example.com/problem",
@@ -121,7 +121,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("returns 400 when externalProblemLink is an empty string", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", { externalProblemLink: "   " });
     const res = await PATCH(event as APIEvent);
@@ -132,7 +132,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("updates externalProblemLink and returns the updated problem", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", {
       externalProblemLink: "https://codeforces.com/problemset/problem/1700/A",
@@ -165,7 +165,7 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
 
   it("trims whitespace from externalProblemLink", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makePatchEvent("codeforces", "1700A", {
       externalProblemLink: "  https://codeforces.com/problemset/problem/1700/A  ",

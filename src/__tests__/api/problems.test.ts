@@ -35,7 +35,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
 
   it("returns problem and empty translations when problem exists with no translations", async () => {
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
     const res = await GET(event as APIEvent);
@@ -48,7 +48,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
   it("returns active translations ordered by createdAt ascending", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
@@ -68,7 +68,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
   it("excludes translations with non-active status", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com'), (3, 'carol', 'carol@example.com')`);
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
@@ -87,7 +87,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
   it("excludes soft-deleted translations", async () => {
     sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com'), (2, 'bob', 'bob@example.com')`);
     sqlite.exec(
-      `INSERT INTO problems (site, external_problem_id) VALUES ('codeforces', '1700A')`
+      `INSERT INTO problems (site, external_problem_id, external_problem_link) VALUES ('codeforces', '1700A', 'https://codeforces.com/problemset/problem/1700/A')`
     );
     const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
     seedTranslations(sqlite, [
