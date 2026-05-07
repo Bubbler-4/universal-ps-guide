@@ -173,7 +173,13 @@ export default function SetLinkPage() {
       <Show when={data()?.status === "ok"}>
         <h1 class="text-2xl font-bold text-gray-900 mb-6">{heading()}</h1>
 
-        <div class="flex flex-col gap-6 max-w-xl">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          class="flex flex-col gap-6 max-w-xl"
+        >
           <div>
             <label for="problem-link" class="block text-sm font-medium text-gray-700 mb-1">
               Link to the original problem
@@ -190,8 +196,7 @@ export default function SetLinkPage() {
 
           <div class="flex gap-3">
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={submitting()}
               class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
             >
@@ -208,7 +213,7 @@ export default function SetLinkPage() {
           <Show when={submitError()}>
             <p role="alert" class="text-sm text-red-600">{submitError()}</p>
           </Show>
-        </div>
+        </form>
       </Show>
     </main>
   );
