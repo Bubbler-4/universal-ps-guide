@@ -11,7 +11,7 @@ CREATE TABLE `__new_problems` (
 	`deleted_at` text
 );
 --> statement-breakpoint
-INSERT INTO `__new_problems` SELECT `id`, `site`, `external_problem_id`, COALESCE(`external_problem_link`, ''), `status`, `created_at`, `updated_at`, `deleted_at` FROM `problems` WHERE `external_problem_link` IS NOT NULL;
+INSERT INTO `__new_problems` SELECT `id`, `site`, `external_problem_id`, COALESCE(`external_problem_link`, ''), `status`, `created_at`, `updated_at`, `deleted_at` FROM `problems`;
 --> statement-breakpoint
 DROP TABLE `problems`;
 --> statement-breakpoint
