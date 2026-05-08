@@ -1,5 +1,6 @@
 import { createContext, useContext, ParentProps, onMount } from "solid-js";
 import { createSignal } from "solid-js";
+import { makePersisted } from "@solid-primitives/storage";
 
 export type Lang = "en" | "ko";
 
@@ -268,32 +269,56 @@ type I18nContextType = {
 
 const I18nContext = createContext<I18nContextType>();
 
-export function I18nProvider(props: ParentProps) {
-  const [lang, setLang] = createSignal<Lang>("en");
+function createPersistedStorage(initAfterHydration: boolean) {
+  if (!initAfterHydration) {
+    return localStorage;
+  }
 
-  onMount(() => {
-    if (typeof localStorage !== "undefined") {
-      try {
-        const stored = localStorage.getItem("lang") as Lang | null;
-        if ((stored === "en" || stored === "ko") && stored !== lang()) {
-          setLang(stored);
-        }
-      } catch {
-        // ignore storage failures
-      }
+  let resolveHydrated: (() => void) | undefined;
+  const hydrated = new Promise<void>((resolve) => {
+    resolveHydrated = resolve;
+  });
+
+  onMount(() => resolveHydrated?.());
+
+  const withLocalStorage = async <T,>(readOrWrite: () => T, fallback: T): Promise<T> => {
+    await hydrated;
+    try {
+      return readOrWrite();
+    } catch {
+      return fallback;
     }
+  };
+
+  return {
+    getItem: (key: string) => withLocalStorage(() => localStorage.getItem(key), null),
+    setItem: (key: string, value: string) =>
+      withLocalStorage(() => localStorage.setItem(key, value), undefined),
+    removeItem: (key: string) =>
+      withLocalStorage(() => localStorage.removeItem(key), undefined),
+  };
+}
+
+export function I18nProvider(props: ParentProps) {
+  const persistedLangOptions = {
+    name: "lang",
+    serialize: (value: Lang) => value,
+    deserialize: (value: string): Lang => (value === "ko" ? "ko" : "en"),
+    initAfterHydration: true,
+  } as const;
+
+  const [lang, setLang] = makePersisted(createSignal<Lang>("en"), {
+    name: persistedLangOptions.name,
+    storage:
+      typeof window === "undefined"
+        ? undefined
+        : createPersistedStorage(persistedLangOptions.initAfterHydration),
+    serialize: persistedLangOptions.serialize,
+    deserialize: persistedLangOptions.deserialize,
   });
 
   const toggleLang = () => {
-    const next: Lang = lang() === "en" ? "ko" : "en";
-    setLang(next);
-    if (typeof localStorage !== "undefined") {
-      try {
-        localStorage.setItem("lang", next);
-      } catch {
-        // ignore storage failures; keep the in-memory language switch
-      }
-    }
+    setLang(lang() === "en" ? "ko" : "en");
   };
 
   const t = (key: TranslationKey): string =>
