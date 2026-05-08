@@ -7,6 +7,7 @@ import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
 import { problems } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
+import { useI18n } from "~/lib/i18n";
 
 type PageData =
   | {
@@ -77,9 +78,10 @@ export const route = {
 export default function SetLinkPage() {
   const params = useParams<{ site: string; externalProblemId: string }>();
   const data = createAsync(() => getSetLinkData(params.site, params.externalProblemId));
+  const { t } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
-  const heading = () => `${displayName()}/${params.externalProblemId} - Set problem link`;
+  const heading = () => `${displayName()}/${params.externalProblemId} - ${t("setProblemLinkSuffix")}`;
 
   const [link, setLink] = createSignal("");
   const [submitting, setSubmitting] = createSignal(false);
@@ -99,18 +101,18 @@ export default function SetLinkPage() {
 
     const trimmed = link().trim();
     if (!trimmed) {
-      setSubmitError("Please enter a URL.");
+      setSubmitError(t("pleaseEnterUrl"));
       return;
     }
 
     try {
       const url = new URL(trimmed);
       if (url.protocol !== "http:" && url.protocol !== "https:") {
-        setSubmitError("URL must use http or https.");
+        setSubmitError(t("urlMustUseHttps"));
         return;
       }
     } catch {
-      setSubmitError("Please enter a valid URL.");
+      setSubmitError(t("pleaseEnterValidUrl"));
       return;
     }
 
@@ -127,13 +129,13 @@ export default function SetLinkPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setSubmitError(
-          (body as { error?: string }).error ?? "Failed to save link. Please try again."
+          (body as { error?: string }).error ?? t("failedToSaveLink")
         );
       } else {
         window.location.href = `/problems/${d.site}/${d.externalProblemId}`;
       }
     } catch {
-      setSubmitError("Network error. Please try again.");
+      setSubmitError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -143,29 +145,29 @@ export default function SetLinkPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
-          <p class="text-yellow-600">The site or problem ID is not valid.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
-          <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "problem_not_found"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Problem Not Found</h1>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("problemNotFound")}</h1>
           <p class="text-yellow-600 mb-4">
-            This problem does not exist yet. Please visit the problem page to create it.
+            {t("problemNotFoundSetLinkDesc")}
           </p>
           <A
             href={`/problems/${params.site}/${params.externalProblemId}`}
             class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
           >
-            Go to problem page
+            {t("goToProblemPage")}
           </A>
         </div>
       </Show>
@@ -182,14 +184,14 @@ export default function SetLinkPage() {
         >
           <div>
             <label for="problem-link" class="block text-sm font-medium text-gray-700 mb-1">
-              Link to the original problem
+              {t("problemLinkLabel")}
             </label>
             <input
               id="problem-link"
               type="url"
               value={link()}
               onInput={(e) => setLink(e.currentTarget.value)}
-              placeholder="https://..."
+              placeholder={t("problemLinkPlaceholder")}
               class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -200,7 +202,7 @@ export default function SetLinkPage() {
               disabled={submitting()}
               class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
             >
-              {submitting() ? "Saving…" : "Save link"}
+              {submitting() ? t("savingEllipsis") : t("saveLink")}
             </button>
           </div>
 

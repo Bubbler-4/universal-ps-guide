@@ -8,6 +8,7 @@ import { problems, translations } from "~/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { useI18n } from "~/lib/i18n";
 
 type PageData =
   | {
@@ -110,10 +111,11 @@ export default function EditTranslationPage() {
   const data = createAsync(() =>
     getEditTranslationData(params.site, params.externalProblemId)
   );
+  const { t } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () =>
-    `${displayName()}/${params.externalProblemId} - Edit translation`;
+    `${displayName()}/${params.externalProblemId} - ${t("editTranslationSuffix")}`;
 
   const [content, setContent] = createSignal("");
   const [initializedTranslationId, setInitializedTranslationId] = createSignal<number | null>(null);
@@ -142,7 +144,7 @@ export default function EditTranslationPage() {
 
     const trimmed = content().trim();
     if (!trimmed) {
-      setSubmitError("Translation content cannot be empty.");
+      setSubmitError(t("translationContentEmpty"));
       return;
     }
 
@@ -157,16 +159,13 @@ export default function EditTranslationPage() {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setSubmitError(
-          (body as { error?: string }).error ??
-            "Failed to update translation. Please check your connection and try again."
-        );
+        await res.json().catch(() => ({}));
+        setSubmitError(t("failedToUpdateTranslation"));
       } else {
         setSubmitted(true);
       }
     } catch {
-      setSubmitError("Network error. Please try again.");
+      setSubmitError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -176,29 +175,29 @@ export default function EditTranslationPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
-          <p class="text-yellow-600">The site or problem ID is not valid.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
-          <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "no_translation" || data()?.status === "problem_not_found"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">No Translation Found</h1>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("noTranslationFound")}</h1>
           <p class="text-yellow-600 mb-4">
-            You don't have an existing translation for this problem.
+            {t("noTranslationFoundDesc")}
           </p>
           <A
             href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
             class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
           >
-            Add translation
+            {t("addTranslation")}
           </A>
         </div>
       </Show>
@@ -208,13 +207,13 @@ export default function EditTranslationPage() {
           when={!submitted()}
           fallback={
             <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-              <h1 class="text-2xl font-bold text-green-700 mb-2">Translation updated!</h1>
-              <p class="text-green-600 mb-4">Your translation has been saved successfully.</p>
+              <h1 class="text-2xl font-bold text-green-700 mb-2">{t("translationUpdated")}</h1>
+              <p class="text-green-600 mb-4">{t("translationSaved")}</p>
               <A
                 href={`/problems/${params.site}/${params.externalProblemId}`}
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Back to problem
+                {t("backToProblem")}
               </A>
             </div>
           }
@@ -228,14 +227,14 @@ export default function EditTranslationPage() {
                 for="translation-content"
                 class="block text-sm font-medium text-gray-700 mb-1"
               >
-                Translation (CommonMark, no HTML, KaTeX math supported)
+                {t("translationEditorLabel")}
               </label>
               <textarea
                 id="translation-content"
                 rows={16}
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
-                placeholder="Write your translation here. Use $...$ for inline math and $$...$$ for block math."
+                placeholder={t("translationEditorPlaceholder")}
                 class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
               />
             </div>
@@ -247,7 +246,7 @@ export default function EditTranslationPage() {
                 onClick={updatePreview}
                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Update preview
+                {t("updatePreview")}
               </button>
               <button
                 type="button"
@@ -255,7 +254,7 @@ export default function EditTranslationPage() {
                 disabled={submitting()}
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
               >
-                {submitting() ? "Saving…" : "Save"}
+                {submitting() ? t("savingEllipsis") : t("save")}
               </button>
             </div>
 
@@ -266,7 +265,7 @@ export default function EditTranslationPage() {
             {/* Preview */}
             <Show when={previewHtml() !== null}>
               <div>
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">Preview</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">{t("preview")}</h2>
                 <div
                   class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
                   innerHTML={previewHtml()!}

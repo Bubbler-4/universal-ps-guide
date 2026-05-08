@@ -4,6 +4,7 @@ import { cache, createAsync, redirect, useNavigate } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { SITES, normalizeProblemId } from "~/lib/problems";
+import { useI18n } from "~/lib/i18n";
 
 const checkSession = cache(async () => {
   "use server";
@@ -25,6 +26,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [site, setSite] = createSignal(SITES[0].toLowerCase());
   const [problemId, setProblemId] = createSignal("");
+  const { t } = useI18n();
 
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
@@ -38,16 +40,15 @@ export default function Home() {
       <div class="text-center">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Universal PS Guide</h1>
         <p class="text-lg text-gray-600 max-w-xl mx-auto">
-          Search competitive programming problems and explore community translations
-          and editorial solutions across major online judges.
+          {t("homeSubtitle")}
         </p>
       </div>
       <div class="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Search a Problem</h2>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">{t("searchProblem")}</h2>
         <form onSubmit={handleSearch} class="flex flex-col sm:flex-row gap-3">
           <select
             id="site-select"
-            aria-label="Online judge site"
+            aria-label={t("onlineJudgeSiteLabel")}
             value={site()}
             onChange={(e) => setSite(e.currentTarget.value)}
             class="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -59,8 +60,8 @@ export default function Home() {
           <input
             id="problem-id-input"
             type="text"
-            aria-label="Problem ID"
-            placeholder="Problem ID (e.g. 1700A)"
+            aria-label={t("problemIdLabel")}
+            placeholder={t("problemIdPlaceholder")}
             value={problemId()}
             onInput={(e) => setProblemId(e.currentTarget.value)}
             class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -69,7 +70,7 @@ export default function Home() {
             type="submit"
             class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
           >
-            Search
+            {t("search")}
           </button>
         </form>
       </div>
