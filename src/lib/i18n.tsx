@@ -1,4 +1,4 @@
-import { createContext, useContext, ParentProps } from "solid-js";
+import { createContext, useContext, ParentProps, onMount } from "solid-js";
 import { createSignal } from "solid-js";
 
 export type Lang = "en" | "ko";
@@ -268,25 +268,32 @@ type I18nContextType = {
 
 const I18nContext = createContext<I18nContextType>();
 
-const initializeLang = (): Lang => {
-  if (typeof localStorage !== "undefined") {
-    try {
-      const stored = localStorage.getItem("lang") as Lang | null;
-      if (stored === "en" || stored === "ko") return stored;
-    } catch {
-      // ignore
-    }
-  }
-  return "en";
-};
-
 export function I18nProvider(props: ParentProps) {
-  const [lang, setLang] = createSignal<Lang>(initializeLang());
+  const [lang, setLang] = createSignal<Lang>("en");
+
+  onMount(() => {
+    if (typeof localStorage !== "undefined") {
+      try {
+        const stored = localStorage.getItem("lang") as Lang | null;
+        if ((stored === "en" || stored === "ko") && stored !== lang()) {
+          setLang(stored);
+        }
+      } catch {
+        // ignore storage failures
+      }
+    }
+  });
 
   const toggleLang = () => {
     const next: Lang = lang() === "en" ? "ko" : "en";
     setLang(next);
-    localStorage.setItem("lang", next);
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem("lang", next);
+      } catch {
+        // ignore storage failures; keep the in-memory language switch
+      }
+    }
   };
 
   const t = (key: TranslationKey): string =>
