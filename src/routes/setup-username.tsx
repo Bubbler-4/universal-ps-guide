@@ -4,6 +4,7 @@ import { redirect } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { USERNAME_RE } from "~/lib/username";
+import { useI18n } from "~/lib/i18n";
 
 async function checkSession() {
   "use server";
@@ -27,12 +28,13 @@ export default function SetupUsernamePage() {
   const [username, setUsername] = createSignal("");
   const [error, setError] = createSignal<string | null>(null);
   const [submitting, setSubmitting] = createSignal(false);
+  const { t } = useI18n();
 
   const validationError = () => {
     const u = username().trim();
     if (u.length === 0) return null;
     if (!USERNAME_RE.test(u))
-      return "Must be 3-30 characters: letters, digits, underscores, or hyphens only.";
+      return t("usernameValidationError");
     return null;
   };
 
@@ -52,12 +54,12 @@ export default function SetupUsernamePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(data.error ?? t("somethingWentWrong"));
       } else {
         location.replace("/");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -65,15 +67,15 @@ export default function SetupUsernamePage() {
 
   return (
     <main class="mx-auto max-w-md px-4 py-16">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Choose a Username</h1>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">{t("chooseUsername")}</h1>
       <p class="text-gray-500 mb-8">
-        Pick a public username. You can only set this once.
+        {t("chooseUsernameSubtitle")}
       </p>
 
       <form onSubmit={handleSubmit} class="flex flex-col gap-4">
         <div>
           <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
-            Username
+            {t("usernameLabel")}
           </label>
           <input
             id="username"
@@ -81,7 +83,7 @@ export default function SetupUsernamePage() {
             autocomplete="off"
             value={username()}
             onInput={e => setUsername(e.currentTarget.value)}
-            placeholder="e.g. my_handle"
+            placeholder={t("usernamePlaceholder")}
             class="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <Show when={validationError()}>
@@ -98,12 +100,12 @@ export default function SetupUsernamePage() {
           disabled={submitting() || !USERNAME_RE.test(username().trim())}
           class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors"
         >
-          {submitting() ? "Saving…" : "Save Username"}
+          {submitting() ? t("savingEllipsis") : t("saveUsername")}
         </button>
       </form>
 
       <p class="mt-4 text-xs text-gray-400">
-        Allowed characters: letters (a-z, A-Z), digits (0-9), underscores (_), hyphens (-). Length: 3-30.
+        {t("usernameAllowedChars")}
       </p>
     </main>
   );

@@ -9,6 +9,7 @@ import { problems, solutions, translations, users } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
 import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
+import { useI18n } from "~/lib/i18n";
 
 type TranslationWithAuthor = {
   id: number;
@@ -172,6 +173,7 @@ export const route = {
 export default function ProblemPage() {
   const params = useParams<{ site: string; externalProblemId: string }>();
   const data = createAsync(() => getProblemData(params.site, params.externalProblemId));
+  const { t, tf } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () => `${displayName()}/${params.externalProblemId}`;
@@ -188,15 +190,15 @@ export default function ProblemPage() {
 
   // True when the currently selected translation belongs to the logged-in user.
   const selectedIsOwned = () => {
-    const t = selectedTranslation();
+    const tr = selectedTranslation();
     const uid = foundData()?.currentUserDbId;
-    return !!(uid && t && t.authorId === uid);
+    return !!(uid && tr && tr.authorId === uid);
   };
 
   // True when the logged-in user already has a translation in the list.
   const userOwnsATranslation = () => {
     const uid = foundData()?.currentUserDbId;
-    return !!(uid && foundData()?.translations.some((t) => t.authorId === uid));
+    return !!(uid && foundData()?.translations.some((tr) => tr.authorId === uid));
   };
 
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
@@ -208,41 +210,31 @@ export default function ProblemPage() {
   } | null>(null);
 
   const handleDelete = async () => {
-    const t = selectedTranslation();
-    if (!t) return;
-    if (
-      !window.confirm(
-        "Are you sure you want to delete your translation? This cannot be undone."
-      )
-    )
-      return;
+    const translation = selectedTranslation();
+    if (!translation) return;
+    if (!window.confirm(t("confirmDeleteTranslation"))) return;
 
     setDeleteError(null);
     setDeleting(true);
     try {
-      const res = await fetch(`/api/translations/${t.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/translations/${translation.id}`, { method: "DELETE" });
       if (res.ok) {
         await revalidate(getProblemData.key);
       } else {
         const body = await res.json().catch(() => ({}));
         setDeleteError(
-          (body as { error?: string }).error ?? "Failed to delete translation."
+          (body as { error?: string }).error ?? t("failedToDeleteTranslation")
         );
       }
     } catch {
-      setDeleteError("Network error. Please try again.");
+      setDeleteError(t("networkError"));
     } finally {
       setDeleting(false);
     }
   };
 
   const handleSolutionDelete = async (solutionId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete your solution? This cannot be undone."
-      )
-    )
-      return;
+    if (!window.confirm(t("confirmDeleteSolution"))) return;
 
     setSolutionDeleteError(null);
     setDeletingSolutionId(solutionId);
@@ -255,13 +247,13 @@ export default function ProblemPage() {
         setSolutionDeleteError({
           id: solutionId,
           message:
-            (body as { error?: string }).error ?? "Failed to delete solution.",
+            (body as { error?: string }).error ?? t("failedToDeleteSolution"),
         });
       }
     } catch {
       setSolutionDeleteError({
         id: solutionId,
-        message: "Network error. Please try again.",
+        message: t("networkError"),
       });
     } finally {
       setDeletingSolutionId(null);
@@ -291,7 +283,7 @@ export default function ProblemPage() {
 
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
-      <Switch fallback={<p class="text-gray-500">Loading…</p>}>
+      <Switch fallback={<p class="text-gray-500">{t("loading")}</p>}>
         <Match when={data()?.status === "found"}>
           <h1 class="text-3xl font-bold text-gray-900 mb-4">{heading()}</h1>
 
@@ -302,21 +294,21 @@ export default function ProblemPage() {
               rel="noopener noreferrer"
               class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
-              View original problem ↗
+              {t("viewOriginalProblem")}
             </a>
           </div>
 
           {/* Translations section */}
           <section class="mb-10">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Translations</h2>
+              <h2 class="text-xl font-semibold text-gray-800">{t("translationsSection")}</h2>
               {/* "Add translation" only for logged-in users who don't own one yet */}
               <Show when={foundData()?.isLoggedIn && !userOwnsATranslation()}>
                 <A
                   href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
                   class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                 >
-                  Add translation
+                  {t("addTranslation")}
                 </A>
               </Show>
             </div>
@@ -324,14 +316,14 @@ export default function ProblemPage() {
             <Show
               when={(foundData()?.translations.length ?? 0) > 0}
               fallback={
-                <p class="text-gray-500 italic">No translations yet.</p>
+                <p class="text-gray-500 italic">{t("noTranslationsYet")}</p>
               }
             >
               {/* Dropdown to pick a translation when there are multiple */}
               <Show when={(foundData()?.translations.length ?? 0) > 1}>
                 <div class="mb-4">
                   <label for="translation-select" class="block text-sm font-medium text-gray-700 mb-1">
-                    Select translation
+                    {t("selectTranslation")}
                   </label>
                   <select
                     id="translation-select"
@@ -340,9 +332,9 @@ export default function ProblemPage() {
                     value={selectedIdx()}
                   >
                     <For each={foundData()?.translations}>
-                      {(t, i) => (
+                      {(tr, i) => (
                         <option value={i()}>
-                          {t.authorUsername ?? "Anonymous"}
+                          {tr.authorUsername ?? t("anonymous")}
                         </option>
                       )}
                     </For>
@@ -355,7 +347,7 @@ export default function ProblemPage() {
                 <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
                   <div class="flex items-center justify-between mb-3">
                     <p class="text-xs text-gray-400">
-                      By {selectedTranslation()!.authorUsername ?? "Anonymous"}
+                      {t("by")} {selectedTranslation()!.authorUsername ?? t("anonymous")}
                     </p>
                     {/* Edit/Delete buttons shown only for the user's own translation */}
                     <Show when={selectedIsOwned()}>
@@ -364,7 +356,7 @@ export default function ProblemPage() {
                           href={`/problems/${params.site}/${params.externalProblemId}/edit-translation`}
                           class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                         >
-                          Edit translation
+                          {t("editTranslation")}
                         </A>
                         <button
                           type="button"
@@ -372,7 +364,7 @@ export default function ProblemPage() {
                           disabled={deleting()}
                           class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                         >
-                          {deleting() ? "Deleting…" : "Delete translation"}
+                          {deleting() ? t("deletingEllipsis") : t("deleteTranslation")}
                         </button>
                       </div>
                     </Show>
@@ -391,25 +383,25 @@ export default function ProblemPage() {
 
           <section>
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Solutions</h2>
+              <h2 class="text-xl font-semibold text-gray-800">{t("solutionsSection")}</h2>
               <Show when={foundData()?.isLoggedIn}>
                 <A
                   href={`/problems/${params.site}/${params.externalProblemId}/add-solution`}
                   class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                 >
-                  Add solution
+                  {t("addSolution")}
                 </A>
               </Show>
             </div>
 
             <Show
               when={(foundData()?.solutions.length ?? 0) > 0}
-              fallback={<p class="text-gray-500 italic">No solutions yet.</p>}
+              fallback={<p class="text-gray-500 italic">{t("noSolutionsYet")}</p>}
             >
               <div class="flex flex-col gap-4">
                 <Show when={foundData()?.solutionsTruncated}>
                   <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
-                    Showing the first {MAX_VISIBLE_SOLUTIONS} solutions for this problem.
+                    {tf("showingFirstNSolutions", { n: MAX_VISIBLE_SOLUTIONS })}
                   </div>
                 </Show>
                 <For each={foundData()?.solutions}>
@@ -424,7 +416,7 @@ export default function ProblemPage() {
                       <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
                         <div class="flex items-center justify-between mb-3 gap-3">
                           <p class="text-xs text-gray-400">
-                            By {solution.authorUsername ?? "Anonymous"}
+                            {t("by")} {solution.authorUsername ?? t("anonymous")}
                           </p>
                           <Show when={isOwned()}>
                             <div class="flex gap-2">
@@ -432,7 +424,7 @@ export default function ProblemPage() {
                                 href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
                                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                               >
-                                Edit solution
+                                {t("editSolution")}
                               </A>
                               <button
                                 type="button"
@@ -441,8 +433,8 @@ export default function ProblemPage() {
                                 class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                               >
                                 {deletingSolutionId() === solution.id
-                                  ? "Deleting…"
-                                  : "Delete solution"}
+                                  ? t("deletingEllipsis")
+                                  : t("deleteSolution")}
                               </button>
                             </div>
                           </Show>
@@ -463,25 +455,25 @@ export default function ProblemPage() {
         </Match>
         <Match when={data()?.status === "not_found"}>
           <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-red-700 mb-2">Problem Not Found</h1>
+            <h1 class="text-2xl font-bold text-red-700 mb-2">{t("problemNotFound")}</h1>
             <p class="text-red-600">
-              This problem does not exist yet.
+              {t("problemNotFoundDesc")}
             </p>
           </div>
         </Match>
         <Match when={data()?.status === "invalid_params"}>
           <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
+            <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
             <p class="text-yellow-600">
-              The site or problem ID is not valid.
+              {t("invalidProblemDesc")}
             </p>
           </div>
         </Match>
         <Match when={data()?.status === "server_error"}>
           <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
+            <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
             <p class="text-red-600">
-              Something went wrong on our end. Please try again later.
+              {t("serverErrorDesc")}
             </p>
           </div>
         </Match>

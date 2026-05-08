@@ -5,6 +5,7 @@ import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { useI18n } from "~/lib/i18n";
 
 type PageData =
   | { status: "ok"; site: string; externalProblemId: string }
@@ -56,10 +57,11 @@ export const route = {
 export default function AddTranslationPage() {
   const params = useParams<{ site: string; externalProblemId: string }>();
   const data = createAsync(() => getAddTranslationData(params.site, params.externalProblemId));
+  const { t } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () =>
-    `${displayName()}/${params.externalProblemId} - Add translation`;
+    `${displayName()}/${params.externalProblemId} - ${t("addTranslationSuffix")}`;
 
   const [content, setContent] = createSignal("");
   const [previewHtml, setPreviewHtml] = createSignal<string | null>(null);
@@ -77,7 +79,7 @@ export default function AddTranslationPage() {
 
     const trimmed = content().trim();
     if (!trimmed) {
-      setSubmitError("Translation content cannot be empty.");
+      setSubmitError(t("translationContentEmpty"));
       return;
     }
 
@@ -96,15 +98,15 @@ export default function AddTranslationPage() {
       });
 
       if (res.status === 409) {
-        setSubmitError("You have already submitted a translation for this problem.");
+        setSubmitError(t("translationAlreadySubmitted"));
       } else if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setSubmitError((body as { error?: string }).error ?? "Failed to submit translation. Please check your connection and try again.");
+        setSubmitError((body as { error?: string }).error ?? t("failedToSubmitTranslation"));
       } else {
         setSubmitted(true);
       }
     } catch {
-      setSubmitError("Network error. Please try again.");
+      setSubmitError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -114,15 +116,15 @@ export default function AddTranslationPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
-          <p class="text-yellow-600">The site or problem ID is not valid.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
-          <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
@@ -131,13 +133,13 @@ export default function AddTranslationPage() {
           when={!submitted()}
           fallback={
             <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-              <h1 class="text-2xl font-bold text-green-700 mb-2">Translation submitted!</h1>
-              <p class="text-green-600 mb-4">Your translation has been saved successfully.</p>
+              <h1 class="text-2xl font-bold text-green-700 mb-2">{t("translationSubmitted")}</h1>
+              <p class="text-green-600 mb-4">{t("translationSaved")}</p>
               <A
                 href={`/problems/${params.site}/${params.externalProblemId}`}
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Back to problem
+                {t("backToProblem")}
               </A>
             </div>
           }
@@ -148,14 +150,14 @@ export default function AddTranslationPage() {
             {/* Editor */}
             <div>
               <label for="translation-content" class="block text-sm font-medium text-gray-700 mb-1">
-                Translation (CommonMark, no HTML, KaTeX math supported)
+                {t("translationEditorLabel")}
               </label>
               <textarea
                 id="translation-content"
                 rows={16}
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
-                placeholder="Write your translation here. Use $...$ for inline math and $$...$$ for block math."
+                placeholder={t("translationEditorPlaceholder")}
                 class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
               />
             </div>
@@ -167,7 +169,7 @@ export default function AddTranslationPage() {
                 onClick={updatePreview}
                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Update preview
+                {t("updatePreview")}
               </button>
               <button
                 type="button"
@@ -175,7 +177,7 @@ export default function AddTranslationPage() {
                 disabled={submitting()}
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
               >
-                {submitting() ? "Submitting…" : "Submit"}
+                {submitting() ? t("submittingEllipsis") : t("submit")}
               </button>
             </div>
 
@@ -186,7 +188,7 @@ export default function AddTranslationPage() {
             {/* Preview */}
             <Show when={previewHtml() !== null}>
               <div>
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">Preview</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">{t("preview")}</h2>
                 <div
                   class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
                   innerHTML={previewHtml()!}
