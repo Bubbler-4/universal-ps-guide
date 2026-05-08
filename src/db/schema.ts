@@ -140,7 +140,34 @@ export const translations = sqliteTable(
   ]
 );
 
+export const solutions = sqliteTable(
+  "solutions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    problemId: integer("problem_id")
+      .notNull()
+      .references(() => problems.id),
+    authorId: integer("author_id")
+      .notNull()
+      .references(() => users.id),
+    content: text("content").notNull(),
+    status: text("status", { enum: ["active", "hidden", "flagged"] })
+      .notNull()
+      .default("active"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    deletedAt: text("deleted_at"),
+  },
+  (t) => [index("solutions_problem_id_idx").on(t.problemId)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Problem = typeof problems.$inferSelect;
 export type Translation = typeof translations.$inferSelect;
 export type NewTranslation = typeof translations.$inferInsert;
+export type Solution = typeof solutions.$inferSelect;
+export type NewSolution = typeof solutions.$inferInsert;

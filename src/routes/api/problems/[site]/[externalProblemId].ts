@@ -1,13 +1,15 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { problems, translations } from "~/db/schema";
+import { problems, solutions, translations } from "~/db/schema";
 import { eq, and, isNull, asc, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
 
 /**
  * GET /api/problems/:site/:externalProblemId
- * Returns problem details together with all active translations.
+ * Returns problem details together with all active translations and a capped
+ * list of active solutions.
  */
 export async function GET(event: APIEvent) {
   const { site, externalProblemId } = event.params;
@@ -49,9 +51,35 @@ export async function GET(event: APIEvent) {
     .orderBy(asc(translations.createdAt))
     .all();
 
-  return new Response(JSON.stringify({ problem, translations: rows }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  const solutionRows = await db
+    .select()
+    .from(solutions)
+    .where(
+      and(
+        eq(solutions.problemId, problem.id),
+        eq(solutions.status, "active"),
+        isNull(solutions.deletedAt)
+      )
+    )
+    .orderBy(asc(solutions.createdAt))
+    .limit(MAX_VISIBLE_SOLUTIONS + 1)
+    .all();
+
+  const solutionsTruncated = solutionRows.length > MAX_VISIBLE_SOLUTIONS;
+
+  // The expected number of solutions per problem is small, so the problem page
+  // keeps a simple capped list here instead of implementing pagination.
+  return new Response(
+    JSON.stringify({
+      problem,
+      translations: rows,
+      solutions: solutionRows.slice(0, MAX_VISIBLE_SOLUTIONS),
+      solutionsTruncated,
+    }),
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 }
 
 /**
