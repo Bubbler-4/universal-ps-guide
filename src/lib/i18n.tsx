@@ -271,11 +271,15 @@ const I18nContext = createContext<I18nContextType>();
 export function I18nProvider(props: ParentProps) {
   const getInitialLang = (): Lang => {
     if (typeof window === "undefined") return "en";
-    const stored = localStorage.getItem("lang") as Lang | null;
-    if (stored === "en" || stored === "ko") {
-      return stored;
+    try {
+      const stored = localStorage.getItem("lang") as Lang | null;
+      if (stored === "en" || stored === "ko") {
+        return stored;
+      }
+      return "en";
+    } catch {
+      return "en";
     }
-    return "en";
   };
 
   const [lang, setLang] = createSignal<Lang>(getInitialLang());
