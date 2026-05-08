@@ -486,6 +486,15 @@ export default function ProblemPage() {
                           </button>
                         </div>
 
+                        {/* Error message in header area (always visible) */}
+                        <Show when={solutionDeleteError()?.id === solution.id}>
+                          <div class="px-6 pb-4">
+                            <p class="text-sm text-red-600">
+                              {solutionDeleteError()!.message}
+                            </p>
+                          </div>
+                        </Show>
+
                         {/* Collapsible solution body */}
                         <Show when={isOpen()}>
                           <div id={bodyId} class="px-6 pb-6 border-t border-gray-100">
