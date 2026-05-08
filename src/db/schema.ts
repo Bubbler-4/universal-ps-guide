@@ -136,6 +136,7 @@ export const translations = sqliteTable(
   },
   (t) => [
     index("translations_problem_id_idx").on(t.problemId),
+    index("translations_author_id_idx").on(t.authorId),
     uniqueIndex("translations_problem_id_author_id_idx").on(t.problemId, t.authorId),
   ]
 );
@@ -162,7 +163,10 @@ export const solutions = sqliteTable(
       .default(sql`(datetime('now'))`),
     deletedAt: text("deleted_at"),
   },
-  (t) => [index("solutions_problem_id_idx").on(t.problemId)]
+  (t) => [
+    index("solutions_problem_id_idx").on(t.problemId),
+    index("solutions_author_id_idx").on(t.authorId),
+  ]
 );
 
 export type User = typeof users.$inferSelect;
