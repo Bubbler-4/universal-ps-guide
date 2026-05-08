@@ -1,3 +1,5 @@
+PRAGMA foreign_keys=OFF;
+--> statement-breakpoint
 CREATE TABLE `__new_problems` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`site` text NOT NULL,
@@ -39,3 +41,7 @@ CREATE UNIQUE INDEX `problems_site_external_problem_id_idx` ON `problems` (`site
 CREATE INDEX `translations_problem_id_idx` ON `translations` (`problem_id`);
 --> statement-breakpoint
 CREATE INDEX `translations_author_id_idx` ON `translations` (`author_id`);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `translations_problem_id_author_id_idx` ON `translations` (`problem_id`,`author_id`);
+--> statement-breakpoint
+PRAGMA foreign_keys=ON;
