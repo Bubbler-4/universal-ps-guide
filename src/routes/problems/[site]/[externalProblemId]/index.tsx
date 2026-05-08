@@ -113,6 +113,8 @@ const getProblemData = cache(
       createdAt: row.createdAt,
     }));
 
+    // Each problem is expected to have only a small number of solutions, so we
+    // skip full pagination here and use limit + 1 / slice to detect overflow.
     const solutionRows = await db
       .select({
         id: solutions.id,
