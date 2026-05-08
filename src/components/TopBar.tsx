@@ -56,7 +56,7 @@ export default function TopBar(props: TopBarProps) {
             type="button"
             onClick={toggleLang}
             class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-medium transition-colors"
-            aria-label="Toggle language"
+            aria-label={lang() === "en" ? t("switchToKorean") : t("switchToEnglish")}
           >
             {lang() === "en" ? "한국어" : "English"}
           </button>

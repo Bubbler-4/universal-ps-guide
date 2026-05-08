@@ -10,6 +10,8 @@ const translations = {
     logout: "Logout",
     signedInAs: "Signed in as",
     finishSetup: "Finish setup",
+    switchToKorean: "Switch to Korean",
+    switchToEnglish: "Switch to English",
     // Home page
     homeSubtitle:
       "Search competitive programming problems and explore community translations and editorial solutions across major online judges.",
@@ -134,6 +136,8 @@ const translations = {
     logout: "로그아웃",
     signedInAs: "로그인됨:",
     finishSetup: "설정 완료하기",
+    switchToKorean: "한국어로 전환",
+    switchToEnglish: "영어로 전환",
     // Home page
     homeSubtitle:
       "주요 온라인 저지의 알고리즘 문제를 검색하고 커뮤니티 번역과 풀이를 탐색하세요.",

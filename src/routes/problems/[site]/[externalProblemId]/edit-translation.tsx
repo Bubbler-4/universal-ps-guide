@@ -159,10 +159,8 @@ export default function EditTranslationPage() {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setSubmitError(
-          (body as { error?: string }).error ?? t("failedToUpdateTranslation")
-        );
+        await res.json().catch(() => ({}));
+        setSubmitError(t("failedToUpdateTranslation"));
       } else {
         setSubmitted(true);
       }
