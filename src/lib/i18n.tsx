@@ -281,7 +281,7 @@ function createPersistedStorage(initAfterHydration: boolean) {
 
   onMount(() => resolveHydrated?.());
 
-  const withLocalStorage = async <T>(readOrWrite: () => T, fallback: T): Promise<T> => {
+  const withLocalStorage = async <T,>(readOrWrite: () => T, fallback: T): Promise<T> => {
     await hydrated;
     try {
       return readOrWrite();
