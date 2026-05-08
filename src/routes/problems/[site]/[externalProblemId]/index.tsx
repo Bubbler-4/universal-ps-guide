@@ -209,6 +209,21 @@ export default function ProblemPage() {
     message: string;
   } | null>(null);
 
+  // Track which solution accordion items are open (by solution id).
+  const [openSolutions, setOpenSolutions] = createSignal<Set<number>>(new Set());
+
+  const toggleSolution = (id: number) => {
+    setOpenSolutions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const handleDelete = async () => {
     const translation = selectedTranslation();
     if (!translation) return;
@@ -411,40 +426,71 @@ export default function ProblemPage() {
                         foundData()?.currentUserDbId &&
                         solution.authorId === foundData()!.currentUserDbId
                       );
+                    const isOpen = () => openSolutions().has(solution.id);
 
                     return (
-                      <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                        <div class="flex items-center justify-between mb-3 gap-3">
-                          <p class="text-xs text-gray-400">
-                            {t("by")} {solution.authorUsername ?? t("anonymous")}
-                          </p>
-                          <Show when={isOwned()}>
-                            <div class="flex gap-2">
-                              <A
-                                href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
-                              >
-                                {t("editSolution")}
-                              </A>
-                              <button
-                                type="button"
-                                onClick={() => handleSolutionDelete(solution.id)}
-                                disabled={deletingSolutionId() === solution.id}
-                                class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
-                              >
-                                {deletingSolutionId() === solution.id
-                                  ? t("deletingEllipsis")
-                                  : t("deleteSolution")}
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                        <Show when={solutionDeleteError()?.id === solution.id}>
-                          <p class="text-sm text-red-600 mb-2">
-                            {solutionDeleteError()!.message}
-                          </p>
+                      <div class="border border-gray-200 rounded-xl bg-white shadow-sm">
+                        {/* Always-visible accordion header */}
+                        <button
+                          type="button"
+                          class="flex w-full items-center justify-between gap-3 px-6 py-4 text-left hover:bg-gray-50 rounded-xl transition-colors"
+                          onClick={() => toggleSolution(solution.id)}
+                          aria-expanded={isOpen()}
+                        >
+                          <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <p class="text-xs text-gray-400 shrink-0">
+                              {t("by")} {solution.authorUsername ?? t("anonymous")}
+                            </p>
+                            <Show when={isOwned()}>
+                              <div class="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <A
+                                  href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
+                                  class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                                >
+                                  {t("editSolution")}
+                                </A>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSolutionDelete(solution.id)}
+                                  disabled={deletingSolutionId() === solution.id}
+                                  class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                                >
+                                  {deletingSolutionId() === solution.id
+                                    ? t("deletingEllipsis")
+                                    : t("deleteSolution")}
+                                </button>
+                              </div>
+                            </Show>
+                          </div>
+                          {/* Chevron icon */}
+                          <svg
+                            class={`w-4 h-4 shrink-0 text-gray-500 transition-transform duration-200 ${isOpen() ? "rotate-180" : ""}`}
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 10 6"
+                          >
+                            <path
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M9 5 5 1 1 5"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Collapsible solution body */}
+                        <Show when={isOpen()}>
+                          <div class="px-6 pb-6 border-t border-gray-100">
+                            <Show when={solutionDeleteError()?.id === solution.id}>
+                              <p class="text-sm text-red-600 mt-4 mb-2">
+                                {solutionDeleteError()!.message}
+                              </p>
+                            </Show>
+                            <div class="markdown-content mt-4" innerHTML={solution.contentHtml} />
+                          </div>
                         </Show>
-                        <div class="markdown-content" innerHTML={solution.contentHtml} />
                       </div>
                     );
                   }}
