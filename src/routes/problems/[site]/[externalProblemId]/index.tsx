@@ -5,11 +5,21 @@ import { eq, and, isNull, asc } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
-import { problems, translations, users } from "~/db/schema";
+import { problems, solutions, translations, users } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
 
 type TranslationWithAuthor = {
+  id: number;
+  authorId: number;
+  authorUsername: string | null;
+  content: string;
+  contentHtml: string;
+  createdAt: string;
+};
+
+type SolutionWithAuthor = {
   id: number;
   authorId: number;
   authorUsername: string | null;
@@ -27,6 +37,8 @@ type ProblemResult =
       isLoggedIn: boolean;
       currentUserDbId: number | null;
       translations: TranslationWithAuthor[];
+      solutions: SolutionWithAuthor[];
+      solutionsTruncated: boolean;
     }
   | { status: "not_found" }
   | { status: "invalid_params" }
@@ -101,6 +113,42 @@ const getProblemData = cache(
       createdAt: row.createdAt,
     }));
 
+    // Each problem is expected to have only a small number of solutions, so we
+    // skip full pagination here and use limit + 1 / slice to detect overflow.
+    const solutionRows = await db
+      .select({
+        id: solutions.id,
+        authorId: solutions.authorId,
+        authorUsername: users.username,
+        content: solutions.content,
+        createdAt: solutions.createdAt,
+      })
+      .from(solutions)
+      .leftJoin(users, eq(users.id, solutions.authorId))
+      .where(
+        and(
+          eq(solutions.problemId, problem.id),
+          eq(solutions.status, "active"),
+          isNull(solutions.deletedAt)
+        )
+      )
+      .orderBy(asc(solutions.createdAt))
+      .limit(MAX_VISIBLE_SOLUTIONS + 1)
+      .all();
+
+    const solutionsTruncated = solutionRows.length > MAX_VISIBLE_SOLUTIONS;
+
+    const solutionList: SolutionWithAuthor[] = solutionRows
+      .slice(0, MAX_VISIBLE_SOLUTIONS)
+      .map((row) => ({
+        id: row.id,
+        authorId: row.authorId,
+        authorUsername: row.authorUsername ?? null,
+        content: row.content,
+        contentHtml: renderMarkdown(row.content),
+        createdAt: row.createdAt,
+      }));
+
     return {
       status: "found",
       site: problem.site,
@@ -109,6 +157,8 @@ const getProblemData = cache(
       isLoggedIn,
       currentUserDbId,
       translations: translationList,
+      solutions: solutionList,
+      solutionsTruncated,
     };
   },
   "getProblemData"
@@ -151,6 +201,11 @@ export default function ProblemPage() {
 
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
   const [deleting, setDeleting] = createSignal(false);
+  const [deletingSolutionId, setDeletingSolutionId] = createSignal<number | null>(null);
+  const [solutionDeleteError, setSolutionDeleteError] = createSignal<{
+    id: number;
+    message: string;
+  } | null>(null);
 
   const handleDelete = async () => {
     const t = selectedTranslation();
@@ -178,6 +233,38 @@ export default function ProblemPage() {
       setDeleteError("Network error. Please try again.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleSolutionDelete = async (solutionId: number) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete your solution? This cannot be undone."
+      )
+    )
+      return;
+
+    setSolutionDeleteError(null);
+    setDeletingSolutionId(solutionId);
+    try {
+      const res = await fetch(`/api/solutions/${solutionId}`, { method: "DELETE" });
+      if (res.ok) {
+        await revalidate(getProblemData.key);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setSolutionDeleteError({
+          id: solutionId,
+          message:
+            (body as { error?: string }).error ?? "Failed to delete solution.",
+        });
+      }
+    } catch {
+      setSolutionDeleteError({
+        id: solutionId,
+        message: "Network error. Please try again.",
+      });
+    } finally {
+      setDeletingSolutionId(null);
     }
   };
 
@@ -302,6 +389,78 @@ export default function ProblemPage() {
                   />
                 </div>
               </Show>
+            </Show>
+          </section>
+
+          <section>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Solutions</h2>
+              <Show when={foundData()?.isLoggedIn}>
+                <A
+                  href={`/problems/${params.site}/${params.externalProblemId}/add-solution`}
+                  class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Add solution
+                </A>
+              </Show>
+            </div>
+
+            <Show
+              when={(foundData()?.solutions.length ?? 0) > 0}
+              fallback={<p class="text-gray-500 italic">No solutions yet.</p>}
+            >
+              <div class="flex flex-col gap-4">
+                <Show when={foundData()?.solutionsTruncated}>
+                  <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
+                    Showing the first {MAX_VISIBLE_SOLUTIONS} solutions for this problem.
+                  </div>
+                </Show>
+                <For each={foundData()?.solutions}>
+                  {(solution) => {
+                    const isOwned = () =>
+                      !!(
+                        foundData()?.currentUserDbId &&
+                        solution.authorId === foundData()!.currentUserDbId
+                      );
+
+                    return (
+                      <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+                        <div class="flex items-center justify-between mb-3 gap-3">
+                          <p class="text-xs text-gray-400">
+                            By {solution.authorUsername ?? "Anonymous"}
+                          </p>
+                          <Show when={isOwned()}>
+                            <div class="flex gap-2">
+                              <A
+                                href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                              >
+                                Edit solution
+                              </A>
+                              <button
+                                type="button"
+                                onClick={() => handleSolutionDelete(solution.id)}
+                                disabled={deletingSolutionId() === solution.id}
+                                class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                              >
+                                {deletingSolutionId() === solution.id
+                                  ? "Deleting…"
+                                  : "Delete solution"}
+                              </button>
+                            </div>
+                          </Show>
+                        </div>
+                        <Show when={solutionDeleteError()?.id === solution.id}>
+                          <p class="text-sm text-red-600 mb-2">
+                            {solutionDeleteError()!.message}
+                          </p>
+                        </Show>
+                        <div class="markdown-content" innerHTML={solution.contentHtml} />
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
             </Show>
           </section>
         </Match>
