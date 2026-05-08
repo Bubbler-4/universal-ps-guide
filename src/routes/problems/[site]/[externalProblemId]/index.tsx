@@ -428,21 +428,18 @@ export default function ProblemPage() {
                       );
                     const isOpen = () => openSolutions().has(solution.id);
 
+                    const bodyId = `solution-body-${solution.id}`;
+
                     return (
                       <div class="border border-gray-200 rounded-xl bg-white shadow-sm">
-                        {/* Always-visible accordion header */}
-                        <button
-                          type="button"
-                          class="flex w-full items-center justify-between gap-3 px-6 py-4 text-left hover:bg-gray-50 rounded-xl transition-colors"
-                          onClick={() => toggleSolution(solution.id)}
-                          aria-expanded={isOpen()}
-                        >
+                        {/* Always-visible accordion header — plain div, not a button */}
+                        <div class="flex w-full items-center justify-between gap-3 px-6 py-4">
                           <div class="flex items-center gap-3 flex-1 min-w-0">
                             <p class="text-xs text-gray-400 shrink-0">
                               {t("by")} {solution.authorUsername ?? t("anonymous")}
                             </p>
                             <Show when={isOwned()}>
-                              <div class="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <div class="flex gap-2 shrink-0">
                                 <A
                                   href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
                                   class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
@@ -462,27 +459,36 @@ export default function ProblemPage() {
                               </div>
                             </Show>
                           </div>
-                          {/* Chevron icon */}
-                          <svg
-                            class={`w-4 h-4 shrink-0 text-gray-500 transition-transform duration-200 ${isOpen() ? "rotate-180" : ""}`}
-                            aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 10 6"
+                          {/* Dedicated toggle button — only the chevron, properly accessible */}
+                          <button
+                            type="button"
+                            class="p-1 rounded-lg hover:bg-gray-100 transition-colors shrink-0 text-gray-500"
+                            onClick={() => toggleSolution(solution.id)}
+                            aria-expanded={isOpen()}
+                            aria-controls={bodyId}
+                            aria-label={isOpen() ? t("collapseSolution") : t("expandSolution")}
                           >
-                            <path
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 5 5 1 1 5"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              class={`w-4 h-4 transition-transform duration-200 ${isOpen() ? "rotate-180" : ""}`}
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 10 6"
+                            >
+                              <path
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5 5 1 1 5"
+                              />
+                            </svg>
+                          </button>
+                        </div>
 
                         {/* Collapsible solution body */}
                         <Show when={isOpen()}>
-                          <div class="px-6 pb-6 border-t border-gray-100">
+                          <div id={bodyId} class="px-6 pb-6 border-t border-gray-100">
                             <Show when={solutionDeleteError()?.id === solution.id}>
                               <p class="text-sm text-red-600 mt-4 mb-2">
                                 {solutionDeleteError()!.message}

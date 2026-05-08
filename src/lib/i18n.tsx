@@ -72,6 +72,8 @@ const translations = {
     showingFirstNSolutions: "Showing the first {n} solutions for this problem.",
     editSolution: "Edit solution",
     deleteSolution: "Delete solution",
+    expandSolution: "Expand solution",
+    collapseSolution: "Collapse solution",
     confirmDeleteSolution:
       "Are you sure you want to delete your solution? This cannot be undone.",
     failedToDeleteSolution: "Failed to delete solution.",
@@ -195,6 +197,8 @@ const translations = {
     showingFirstNSolutions: "이 문제의 처음 {n}개 풀이를 표시합니다.",
     editSolution: "풀이 수정",
     deleteSolution: "풀이 삭제",
+    expandSolution: "풀이 펼치기",
+    collapseSolution: "풀이 접기",
     confirmDeleteSolution: "풀이를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     failedToDeleteSolution: "풀이 삭제에 실패했습니다.",
     solutionContentEmpty: "풀이 내용을 입력해 주세요.",
