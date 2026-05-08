@@ -7,7 +7,7 @@ import { getCloudflareEnv } from "~/server/env";
 
 /**
  * PUT /api/solutions/:id
- * Body: { content }
+ * Body: { content, updatedAt }
  * Updates the content of a solution owned by the authenticated user.
  */
 export async function PUT(event: APIEvent) {
@@ -36,10 +36,15 @@ export async function PUT(event: APIEvent) {
     });
   }
 
-  const { content } = body as Record<string, unknown>;
-  if (typeof content !== "string" || !content.trim()) {
+  const { content, updatedAt } = body as Record<string, unknown>;
+  if (
+    typeof content !== "string" ||
+    !content.trim() ||
+    typeof updatedAt !== "string" ||
+    !updatedAt.trim()
+  ) {
     return new Response(
-      JSON.stringify({ error: "content must be a non-empty string" }),
+      JSON.stringify({ error: "content and updatedAt are required" }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -68,22 +73,29 @@ export async function PUT(event: APIEvent) {
 
   const updated = await db
     .update(solutions)
-    .set({ content: content.trim(), updatedAt: sql`(datetime('now'))` })
+    .set({
+      content: content.trim(),
+      updatedAt: sql`(strftime('%Y-%m-%d %H:%M:%f', 'now'))`,
+    })
     .where(
       and(
         eq(solutions.id, id),
         eq(solutions.authorId, session.dbUserId),
-        isNull(solutions.deletedAt)
+        isNull(solutions.deletedAt),
+        eq(solutions.updatedAt, updatedAt.trim())
       )
     )
     .returning()
     .get();
 
   if (!updated) {
-    return new Response(JSON.stringify({ error: "Solution not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Solution was changed elsewhere. Reload and try again." }),
+      {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   return new Response(JSON.stringify({ solution: updated }), {

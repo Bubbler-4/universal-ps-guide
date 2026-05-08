@@ -44,6 +44,7 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     expect(body.problem).toMatchObject({ site: "codeforces", externalProblemId: "1700A" });
     expect(body.translations).toEqual([]);
     expect(body.solutions).toEqual([]);
+    expect(body.solutionsTruncated).toBe(false);
   });
 
   it("returns active translations ordered by createdAt ascending", async () => {
@@ -120,6 +121,32 @@ describe("GET /api/problems/:site/:externalProblemId", () => {
     expect(body.solutions).toHaveLength(2);
     expect(body.solutions[0].content).toBe("Solution A");
     expect(body.solutions[1].content).toBe("Solution B");
+    expect(body.solutionsTruncated).toBe(false);
+  });
+
+  it("caps returned solutions at 50 and reports truncation", async () => {
+    sqlite.exec(`INSERT INTO users (id, username, email) VALUES (1, 'alice', 'alice@example.com')`);
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
+    const problemId = (sqlite.prepare("SELECT id FROM problems LIMIT 1").get() as { id: number }).id;
+    seedSolutions(
+      sqlite,
+      Array.from({ length: 52 }, (_, index) => ({
+        problemId,
+        userId: 1,
+        content: `Solution ${index + 1}`,
+        createdAt: `2024-01-01 00:00:${String(index).padStart(2, "0")}`,
+      }))
+    );
+
+    const event = makeParamEvent({ site: "codeforces", externalProblemId: "1700A" });
+    const res = await GET(event as APIEvent);
+    const body = await res.json();
+    expect(body.solutions).toHaveLength(50);
+    expect(body.solutionsTruncated).toBe(true);
+    expect(body.solutions[0].content).toBe("Solution 1");
+    expect(body.solutions[49].content).toBe("Solution 50");
   });
 
   it("returns 400 when site param is empty", async () => {

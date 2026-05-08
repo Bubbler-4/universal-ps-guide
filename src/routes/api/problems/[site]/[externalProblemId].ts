@@ -4,10 +4,12 @@ import { eq, and, isNull, asc, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
+import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
 
 /**
  * GET /api/problems/:site/:externalProblemId
- * Returns problem details together with all active translations and solutions.
+ * Returns problem details together with all active translations and a capped
+ * list of active solutions.
  */
 export async function GET(event: APIEvent) {
   const { site, externalProblemId } = event.params;
@@ -60,13 +62,24 @@ export async function GET(event: APIEvent) {
       )
     )
     .orderBy(asc(solutions.createdAt))
+    .limit(MAX_VISIBLE_SOLUTIONS + 1)
     .all();
 
-  // The expected number of solutions per problem is small, so returning the
-  // full active list here keeps the problem page simple.
-  return new Response(JSON.stringify({ problem, translations: rows, solutions: solutionRows }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  const solutionsTruncated = solutionRows.length > MAX_VISIBLE_SOLUTIONS;
+
+  // The expected number of solutions per problem is small, so the problem page
+  // keeps a simple capped list here instead of implementing pagination.
+  return new Response(
+    JSON.stringify({
+      problem,
+      translations: rows,
+      solutions: solutionRows.slice(0, MAX_VISIBLE_SOLUTIONS),
+      solutionsTruncated,
+    }),
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 }
 
 /**

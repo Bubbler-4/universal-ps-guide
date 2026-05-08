@@ -8,6 +8,7 @@ import { getDb } from "~/db";
 import { problems, solutions, translations, users } from "~/db/schema";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
 
 type TranslationWithAuthor = {
   id: number;
@@ -37,6 +38,7 @@ type ProblemResult =
       currentUserDbId: number | null;
       translations: TranslationWithAuthor[];
       solutions: SolutionWithAuthor[];
+      solutionsTruncated: boolean;
     }
   | { status: "not_found" }
   | { status: "invalid_params" }
@@ -129,16 +131,21 @@ const getProblemData = cache(
         )
       )
       .orderBy(asc(solutions.createdAt))
+      .limit(MAX_VISIBLE_SOLUTIONS + 1)
       .all();
 
-    const solutionList: SolutionWithAuthor[] = solutionRows.map((row) => ({
-      id: row.id,
-      authorId: row.authorId,
-      authorUsername: row.authorUsername ?? null,
-      content: row.content,
-      contentHtml: renderMarkdown(row.content),
-      createdAt: row.createdAt,
-    }));
+    const solutionsTruncated = solutionRows.length > MAX_VISIBLE_SOLUTIONS;
+
+    const solutionList: SolutionWithAuthor[] = solutionRows
+      .slice(0, MAX_VISIBLE_SOLUTIONS)
+      .map((row) => ({
+        id: row.id,
+        authorId: row.authorId,
+        authorUsername: row.authorUsername ?? null,
+        content: row.content,
+        contentHtml: renderMarkdown(row.content),
+        createdAt: row.createdAt,
+      }));
 
     return {
       status: "found",
@@ -149,6 +156,7 @@ const getProblemData = cache(
       currentUserDbId,
       translations: translationList,
       solutions: solutionList,
+      solutionsTruncated,
     };
   },
   "getProblemData"
@@ -400,6 +408,11 @@ export default function ProblemPage() {
               fallback={<p class="text-gray-500 italic">No solutions yet.</p>}
             >
               <div class="flex flex-col gap-4">
+                <Show when={foundData()?.solutionsTruncated}>
+                  <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
+                    Showing the first {MAX_VISIBLE_SOLUTIONS} solutions for this problem.
+                  </div>
+                </Show>
                 <For each={foundData()?.solutions}>
                   {(solution) => {
                     const isOwned = () =>

@@ -56,22 +56,35 @@ describe("PUT /api/solutions/:id", () => {
 
   it("returns 401 when not authenticated", async () => {
     mockSession = null;
-    const res = await PUT(makeIdEvent("PUT", "1", { content: "new" }) as APIEvent);
+    const res = await PUT(
+      makeIdEvent("PUT", "1", { content: "new", updatedAt: "2024-01-01 00:00:00" }) as APIEvent
+    );
     expect(res.status).toBe(401);
   });
 
   it("returns 400 for non-integer id", async () => {
-    const res = await PUT(makeIdEvent("PUT", "abc", { content: "new" }) as APIEvent);
+    const res = await PUT(
+      makeIdEvent("PUT", "abc", { content: "new", updatedAt: "2024-01-01 00:00:00" }) as APIEvent
+    );
     expect(res.status).toBe(400);
   });
 
   it("returns 400 when content is empty", async () => {
-    const res = await PUT(makeIdEvent("PUT", "1", { content: "   " }) as APIEvent);
+    const res = await PUT(
+      makeIdEvent("PUT", "1", { content: "   ", updatedAt: "2024-01-01 00:00:00" }) as APIEvent
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when updatedAt is missing", async () => {
+    const res = await PUT(makeIdEvent("PUT", "1", { content: "updated" }) as APIEvent);
     expect(res.status).toBe(400);
   });
 
   it("returns 404 when solution does not exist", async () => {
-    const res = await PUT(makeIdEvent("PUT", "999", { content: "updated" }) as APIEvent);
+    const res = await PUT(
+      makeIdEvent("PUT", "999", { content: "updated", updatedAt: "2024-01-01 00:00:00" }) as APIEvent
+    );
     expect(res.status).toBe(404);
   });
 
@@ -89,7 +102,10 @@ describe("PUT /api/solutions/:id", () => {
 
     mockSession = makeSession(1);
     const res = await PUT(
-      makeIdEvent("PUT", String(solutionId), { content: "hacked" }) as APIEvent
+      makeIdEvent("PUT", String(solutionId), {
+        content: "hacked",
+        updatedAt: "2024-01-01 00:00:00",
+      }) as APIEvent
     );
     expect(res.status).toBe(403);
   });
@@ -105,14 +121,42 @@ describe("PUT /api/solutions/:id", () => {
     const solutionId = (
       sqlite.prepare("SELECT id FROM solutions LIMIT 1").get() as { id: number }
     ).id;
+    const updatedAt = (
+      sqlite.prepare("SELECT updated_at FROM solutions LIMIT 1").get() as { updated_at: string }
+    ).updated_at;
 
     mockSession = makeSession(5);
     const res = await PUT(
-      makeIdEvent("PUT", String(solutionId), { content: "  Updated  " }) as APIEvent
+      makeIdEvent("PUT", String(solutionId), {
+        content: "  Updated  ",
+        updatedAt,
+      }) as APIEvent
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.solution.content).toBe("Updated");
+  });
+
+  it("returns 409 when the caller submits a stale updatedAt", async () => {
+    sqlite.exec(
+      `INSERT INTO users (id, username, email) VALUES (6, 'dana', 'dana@example.com')`
+    );
+    seedProblems(sqlite, [
+      { id: 21, site: "atcoder", externalProblemId: "abc300_d", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_d" },
+    ]);
+    seedSolutions(sqlite, [{ problemId: 21, userId: 6, content: "Original" }]);
+    const solutionId = (
+      sqlite.prepare("SELECT id FROM solutions LIMIT 1").get() as { id: number }
+    ).id;
+
+    mockSession = makeSession(6);
+    const res = await PUT(
+      makeIdEvent("PUT", String(solutionId), {
+        content: "Updated",
+        updatedAt: "2024-01-01 00:00:00",
+      }) as APIEvent
+    );
+    expect(res.status).toBe(409);
   });
 });
 

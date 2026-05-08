@@ -16,6 +16,7 @@ type PageData =
       externalProblemId: string;
       solutionId: number;
       existingContent: string;
+      updatedAt: string;
     }
   | { status: "no_solution" }
   | { status: "problem_not_found" }
@@ -81,7 +82,11 @@ const getEditSolutionData = cache(
     }
 
     const solution = await db
-      .select({ id: solutions.id, content: solutions.content })
+      .select({
+        id: solutions.id,
+        content: solutions.content,
+        updatedAt: solutions.updatedAt,
+      })
       .from(solutions)
       .where(
         and(
@@ -104,6 +109,7 @@ const getEditSolutionData = cache(
       externalProblemId: normalizedId,
       solutionId: solution.id,
       existingContent: solution.content,
+      updatedAt: solution.updatedAt,
     };
   },
   "getEditSolutionData"
@@ -132,6 +138,7 @@ export default function EditSolutionPage() {
 
   const [content, setContent] = createSignal("");
   const [initializedSolutionId, setInitializedSolutionId] = createSignal<number | null>(null);
+  const [loadedUpdatedAt, setLoadedUpdatedAt] = createSignal("");
   const [previewHtml, setPreviewHtml] = createSignal<string | null>(null);
   const [submitting, setSubmitting] = createSignal(false);
   const [submitError, setSubmitError] = createSignal<string | null>(null);
@@ -141,6 +148,7 @@ export default function EditSolutionPage() {
     const d = data();
     if (d?.status === "ok" && initializedSolutionId() !== d.solutionId) {
       setContent(d.existingContent);
+      setLoadedUpdatedAt(d.updatedAt);
       setInitializedSolutionId(d.solutionId);
     }
   });
@@ -163,11 +171,11 @@ export default function EditSolutionPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/solutions/${d.solutionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: trimmed }),
-      });
+        const res = await fetch(`/api/solutions/${d.solutionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: trimmed, updatedAt: loadedUpdatedAt() }),
+        });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
