@@ -1,4 +1,4 @@
-import { createContext, useContext, ParentProps } from "solid-js";
+import { createContext, useContext, ParentProps, onMount } from "solid-js";
 import { createSignal } from "solid-js";
 import { makePersisted } from "@solid-primitives/storage";
 
@@ -269,11 +269,52 @@ type I18nContextType = {
 
 const I18nContext = createContext<I18nContextType>();
 
+function createPersistedStorage(initAfterHydration: boolean) {
+  if (!initAfterHydration) {
+    return localStorage;
+  }
+
+  let resolveHydrated: (() => void) | undefined;
+  const hydrated = new Promise<void>((resolve) => {
+    resolveHydrated = resolve;
+  });
+
+  onMount(() => resolveHydrated?.());
+
+  const withLocalStorage = async <T>(readOrWrite: () => T, fallback: T): Promise<T> => {
+    await hydrated;
+    try {
+      return readOrWrite();
+    } catch {
+      return fallback;
+    }
+  };
+
+  return {
+    getItem: (key: string) => withLocalStorage(() => localStorage.getItem(key), null),
+    setItem: (key: string, value: string) =>
+      withLocalStorage(() => localStorage.setItem(key, value), undefined),
+    removeItem: (key: string) =>
+      withLocalStorage(() => localStorage.removeItem(key), undefined),
+  };
+}
+
 export function I18nProvider(props: ParentProps) {
-  const [lang, setLang] = makePersisted(createSignal<Lang>("en"), {
+  const persistedLangOptions = {
     name: "lang",
-    serialize: (value) => value,
-    deserialize: (value) => (value === "ko" ? "ko" : "en"),
+    serialize: (value: Lang) => value,
+    deserialize: (value: string): Lang => (value === "ko" ? "ko" : "en"),
+    initAfterHydration: true,
+  } as const;
+
+  const [lang, setLang] = makePersisted(createSignal<Lang>("en"), {
+    name: persistedLangOptions.name,
+    storage:
+      typeof window === "undefined"
+        ? undefined
+        : createPersistedStorage(persistedLangOptions.initAfterHydration),
+    serialize: persistedLangOptions.serialize,
+    deserialize: persistedLangOptions.deserialize,
   });
 
   const toggleLang = () => {
