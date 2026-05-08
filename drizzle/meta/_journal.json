@@ -8,6 +8,41 @@
       "when": 1777377863709,
       "tag": "0000_keen_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1777377863710,
+      "tag": "0001_add_github_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777377863711,
+      "tag": "0002_add_better_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1777377863712,
+      "tag": "0003_add_problem_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1777377863713,
+      "tag": "0004_require_problem_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1777377863714,
+      "tag": "0005_add_solutions",
+      "breakpoints": true
     }
   ]
 }
