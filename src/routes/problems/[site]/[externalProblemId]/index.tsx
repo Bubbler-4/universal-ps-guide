@@ -295,19 +295,16 @@ export default function ProblemPage() {
         <Match when={data()?.status === "found"}>
           <h1 class="text-3xl font-bold text-gray-900 mb-4">{heading()}</h1>
 
-          {/* External problem link (logged-in users only) */}
-          <Show when={foundData()?.isLoggedIn}>
-            <div class="mb-8">
-              <a
-                href={foundData()!.externalProblemLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-              >
-                View original problem ↗
-              </a>
-            </div>
-          </Show>
+          <div class="mb-8">
+            <a
+              href={foundData()!.externalProblemLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              View original problem ↗
+            </a>
+          </div>
 
           {/* Translations section */}
           <section class="mb-10">
