@@ -22,7 +22,7 @@ const translations = {
     search: "Search",
     // Login page
     signIn: "Sign In",
-    signInSubtitle: "Sign in to submit translations, solutions, and vote on content.",
+    signInSubtitle: "Sign in to submit translations and solutions.",
     continueWithGitHub: "Continue with GitHub",
     // Setup username page
     chooseUsername: "Choose a Username",
@@ -150,7 +150,7 @@ const translations = {
     search: "검색",
     // Login page
     signIn: "로그인",
-    signInSubtitle: "번역, 풀이를 제출하고 콘텐츠에 투표하려면 로그인하세요.",
+    signInSubtitle: "번역, 풀이를 제출하려면 로그인하세요.",
     continueWithGitHub: "GitHub으로 계속하기",
     // Setup username page
     chooseUsername: "사용자 이름 선택",
