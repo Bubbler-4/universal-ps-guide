@@ -144,28 +144,28 @@ export default function SetLinkPage() {
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
-          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
+        <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600 dark:text-yellow-400">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
-        <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
-          <p class="text-red-600">{t("serverErrorDesc")}</p>
+        <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600 dark:text-red-400">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "problem_not_found"}>
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("problemNotFound")}</h1>
-          <p class="text-yellow-600 mb-4">
+        <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("problemNotFound")}</h1>
+          <p class="text-yellow-600 dark:text-yellow-400 mb-4">
             {t("problemNotFoundSetLinkDesc")}
           </p>
           <A
             href={`/problems/${params.site}/${params.externalProblemId}`}
-            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
+            class="inline-block bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-medium px-5 py-2 rounded-lg transition-colors"
           >
             {t("goToProblemPage")}
           </A>
@@ -173,7 +173,7 @@ export default function SetLinkPage() {
       </Show>
 
       <Show when={data()?.status === "ok"}>
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">{heading()}</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{heading()}</h1>
 
         <form
           onSubmit={(e) => {
@@ -183,7 +183,7 @@ export default function SetLinkPage() {
           class="flex flex-col gap-6 max-w-xl"
         >
           <div>
-            <label for="problem-link" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="problem-link" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t("problemLinkLabel")}
             </label>
             <input
@@ -192,7 +192,7 @@ export default function SetLinkPage() {
               value={link()}
               onInput={(e) => setLink(e.currentTarget.value)}
               placeholder={t("problemLinkPlaceholder")}
-              class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
           </div>
 
@@ -200,14 +200,14 @@ export default function SetLinkPage() {
             <button
               type="submit"
               disabled={submitting()}
-              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
+              class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
             >
               {submitting() ? t("savingEllipsis") : t("saveLink")}
             </button>
           </div>
 
           <Show when={submitError()}>
-            <p role="alert" class="text-sm text-red-600">{submitError()}</p>
+            <p role="alert" class="text-sm text-red-600 dark:text-red-400">{submitError()}</p>
           </Show>
         </form>
       </Show>

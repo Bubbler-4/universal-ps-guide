@@ -174,28 +174,28 @@ export default function EditTranslationPage() {
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
-          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
+        <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600 dark:text-yellow-400">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
-        <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
-          <p class="text-red-600">{t("serverErrorDesc")}</p>
+        <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600 dark:text-red-400">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "no_translation" || data()?.status === "problem_not_found"}>
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("noTranslationFound")}</h1>
-          <p class="text-yellow-600 mb-4">
+        <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("noTranslationFound")}</h1>
+          <p class="text-yellow-600 dark:text-yellow-400 mb-4">
             {t("noTranslationFoundDesc")}
           </p>
           <A
             href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
-            class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
+            class="inline-block bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-medium px-5 py-2 rounded-lg transition-colors"
           >
             {t("addTranslation")}
           </A>
@@ -206,26 +206,26 @@ export default function EditTranslationPage() {
         <Show
           when={!submitted()}
           fallback={
-            <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-              <h1 class="text-2xl font-bold text-green-700 mb-2">{t("translationUpdated")}</h1>
-              <p class="text-green-600 mb-4">{t("translationSaved")}</p>
+            <div class="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-8 text-center">
+              <h1 class="text-2xl font-bold text-green-700 dark:text-green-300 mb-2">{t("translationUpdated")}</h1>
+              <p class="text-green-600 dark:text-green-400 mb-4">{t("translationSaved")}</p>
               <A
                 href={`/problems/${params.site}/${params.externalProblemId}`}
-                class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
+                class="inline-block bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-medium px-5 py-2 rounded-lg transition-colors"
               >
                 {t("backToProblem")}
               </A>
             </div>
           }
         >
-          <h1 class="text-2xl font-bold text-gray-900 mb-6">{heading()}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{heading()}</h1>
 
           <div class="flex flex-col gap-6">
             {/* Editor */}
             <div>
               <label
                 for="translation-content"
-                class="block text-sm font-medium text-gray-700 mb-1"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 {t("translationEditorLabel")}
               </label>
@@ -235,7 +235,7 @@ export default function EditTranslationPage() {
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
                 placeholder={t("translationEditorPlaceholder")}
-                class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                class="w-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg px-4 py-3 font-mono text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-y"
               />
             </div>
 
@@ -244,7 +244,7 @@ export default function EditTranslationPage() {
               <button
                 type="button"
                 onClick={updatePreview}
-                class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
+                class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium px-5 py-2 rounded-lg transition-colors"
               >
                 {t("updatePreview")}
               </button>
@@ -252,22 +252,22 @@ export default function EditTranslationPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting()}
-                class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
+                class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
               >
                 {submitting() ? t("savingEllipsis") : t("save")}
               </button>
             </div>
 
             <Show when={submitError()}>
-              <p class="text-sm text-red-600">{submitError()}</p>
+              <p class="text-sm text-red-600 dark:text-red-400">{submitError()}</p>
             </Show>
 
             {/* Preview */}
             <Show when={previewHtml() !== null}>
               <div>
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">{t("preview")}</h2>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{t("preview")}</h2>
                 <div
-                  class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
+                  class="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-900 shadow-sm dark:shadow-none markdown-content"
                   innerHTML={previewHtml()!}
                 />
               </div>

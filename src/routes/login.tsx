@@ -27,14 +27,14 @@ export default function LoginPage() {
 
   return (
     <main class="mx-auto max-w-md px-4 py-16 text-center">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">{t("signIn")}</h1>
-      <p class="text-gray-500 mb-10">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t("signIn")}</h1>
+      <p class="text-gray-500 dark:text-gray-400 mb-10">
         {t("signInSubtitle")}
       </p>
       <a
         href="/api/auth/signin/github"
         rel="external"
-        class="inline-flex items-center gap-3 bg-gray-900 hover:bg-gray-700 text-white font-semibold px-6 py-3 rounded-lg text-base transition-colors shadow-md"
+        class="inline-flex items-center gap-3 bg-gray-900 hover:bg-gray-700 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-semibold px-6 py-3 rounded-lg text-base transition-colors shadow-md"
       >
         <svg
           aria-hidden="true"
