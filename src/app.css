@@ -4,6 +4,7 @@
 :root {
   --background-rgb: 248, 250, 252;
   --foreground-rgb: 15, 23, 42;
+
   color-scheme: light;
 }
 
@@ -11,6 +12,7 @@
   :root {
     --background-rgb: 2, 6, 23;
     --foreground-rgb: 226, 232, 240;
+
     color-scheme: dark;
   }
 }
