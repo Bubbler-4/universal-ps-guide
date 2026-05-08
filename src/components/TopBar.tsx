@@ -1,12 +1,15 @@
 import { Show } from "solid-js";
 import { A } from "@solidjs/router";
 import type { AppSession } from "~/lib/auth";
+import { useI18n } from "~/lib/i18n";
 
 interface TopBarProps {
   session: AppSession | null;
 }
 
 export default function TopBar(props: TopBarProps) {
+  const { t, lang, toggleLang } = useI18n();
+
   return (
     <header class="bg-gray-900 text-white shadow-md">
       <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
@@ -21,7 +24,7 @@ export default function TopBar(props: TopBarProps) {
                 href="/login"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
-                Login
+                {t("login")}
               </A>
             }
           >
@@ -29,7 +32,7 @@ export default function TopBar(props: TopBarProps) {
               when={props.session?.needsUsername}
               fallback={
                 <span class="text-gray-300">
-                  Signed in as{" "}
+                  {t("signedInAs")}{" "}
                   <span class="font-semibold text-white">{props.session?.username}</span>
                 </span>
               }
@@ -38,7 +41,7 @@ export default function TopBar(props: TopBarProps) {
                 href="/setup-username"
                 class="text-blue-300 hover:text-blue-200 font-medium transition-colors"
               >
-                Finish setup
+                {t("finishSetup")}
               </A>
             </Show>
             <a
@@ -46,9 +49,17 @@ export default function TopBar(props: TopBarProps) {
               target="_self"
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
             >
-              Logout
+              {t("logout")}
             </a>
           </Show>
+          <button
+            type="button"
+            onClick={toggleLang}
+            class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-medium transition-colors"
+            aria-label="Toggle language"
+          >
+            {lang() === "en" ? "한국어" : "English"}
+          </button>
         </nav>
       </div>
     </header>

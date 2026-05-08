@@ -8,6 +8,7 @@ import { problems } from "~/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { useI18n } from "~/lib/i18n";
 
 type PageData =
   | { status: "ok"; site: string; externalProblemId: string }
@@ -73,9 +74,10 @@ export const route = {
 export default function AddSolutionPage() {
   const params = useParams<{ site: string; externalProblemId: string }>();
   const data = createAsync(() => getAddSolutionData(params.site, params.externalProblemId));
+  const { t } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
-  const heading = () => `${displayName()}/${params.externalProblemId} - Add solution`;
+  const heading = () => `${displayName()}/${params.externalProblemId} - ${t("addSolutionSuffix")}`;
 
   const [content, setContent] = createSignal("");
   const [previewHtml, setPreviewHtml] = createSignal<string | null>(null);
@@ -93,7 +95,7 @@ export default function AddSolutionPage() {
 
     const trimmed = content().trim();
     if (!trimmed) {
-      setSubmitError("Solution content cannot be empty.");
+      setSubmitError(t("solutionContentEmpty"));
       return;
     }
 
@@ -114,14 +116,13 @@ export default function AddSolutionPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setSubmitError(
-          (body as { error?: string }).error ??
-            "Failed to submit solution. Please check your connection and try again."
+          (body as { error?: string }).error ?? t("failedToSubmitSolution")
         );
       } else {
         setSubmitted(true);
       }
     } catch {
-      setSubmitError("Network error. Please try again.");
+      setSubmitError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -131,22 +132,22 @@ export default function AddSolutionPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
-          <p class="text-yellow-600">The site or problem ID is not valid.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600">{t("invalidProblemDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
-          <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "not_found"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Problem Not Found</h1>
-          <p class="text-red-600">This problem does not exist yet.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("problemNotFound")}</h1>
+          <p class="text-red-600">{t("problemNotFoundDesc")}</p>
         </div>
       </Show>
 
@@ -155,13 +156,13 @@ export default function AddSolutionPage() {
           when={!submitted()}
           fallback={
             <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-              <h1 class="text-2xl font-bold text-green-700 mb-2">Solution submitted!</h1>
-              <p class="text-green-600 mb-4">Your solution has been saved successfully.</p>
+              <h1 class="text-2xl font-bold text-green-700 mb-2">{t("solutionSubmitted")}</h1>
+              <p class="text-green-600 mb-4">{t("solutionSaved")}</p>
               <A
                 href={`/problems/${params.site}/${params.externalProblemId}`}
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Back to problem
+                {t("backToProblem")}
               </A>
             </div>
           }
@@ -171,14 +172,14 @@ export default function AddSolutionPage() {
           <div class="flex flex-col gap-6">
             <div>
               <label for="solution-content" class="block text-sm font-medium text-gray-700 mb-1">
-                Solution (CommonMark, no HTML, KaTeX math supported)
+                {t("solutionEditorLabel")}
               </label>
               <textarea
                 id="solution-content"
                 rows={16}
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
-                placeholder="Write your solution here. Use $...$ for inline math and $$...$$ for block math."
+                placeholder={t("solutionEditorPlaceholder")}
                 class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
               />
             </div>
@@ -189,7 +190,7 @@ export default function AddSolutionPage() {
                 onClick={updatePreview}
                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Update preview
+                {t("updatePreview")}
               </button>
               <button
                 type="button"
@@ -197,7 +198,7 @@ export default function AddSolutionPage() {
                 disabled={submitting()}
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
               >
-                {submitting() ? "Submitting…" : "Submit"}
+                {submitting() ? t("submittingEllipsis") : t("submit")}
               </button>
             </div>
 
@@ -207,7 +208,7 @@ export default function AddSolutionPage() {
 
             <Show when={previewHtml() !== null}>
               <div>
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">Preview</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">{t("preview")}</h2>
                 <div
                   class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
                   innerHTML={previewHtml()!}

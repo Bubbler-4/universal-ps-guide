@@ -8,6 +8,7 @@ import { problems, solutions } from "~/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
 import { renderMarkdown } from "~/lib/markdown";
+import { useI18n } from "~/lib/i18n";
 
 type PageData =
   | {
@@ -132,9 +133,10 @@ export default function EditSolutionPage() {
   const data = createAsync(() =>
     getEditSolutionData(params.site, params.externalProblemId, params.solutionId)
   );
+  const { t } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
-  const heading = () => `${displayName()}/${params.externalProblemId} - Edit solution`;
+  const heading = () => `${displayName()}/${params.externalProblemId} - ${t("editSolutionSuffix")}`;
 
   const [content, setContent] = createSignal("");
   const [initializedSolutionId, setInitializedSolutionId] = createSignal<number | null>(null);
@@ -163,7 +165,7 @@ export default function EditSolutionPage() {
 
     const trimmed = content().trim();
     if (!trimmed) {
-      setSubmitError("Solution content cannot be empty.");
+      setSubmitError(t("solutionContentEmpty"));
       return;
     }
 
@@ -180,14 +182,13 @@ export default function EditSolutionPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setSubmitError(
-          (body as { error?: string }).error ??
-            "Failed to update solution. Please check your connection and try again."
+          (body as { error?: string }).error ?? t("failedToUpdateSolution")
         );
       } else {
         setSubmitted(true);
       }
     } catch {
-      setSubmitError("Network error. Please try again.");
+      setSubmitError(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -197,27 +198,27 @@ export default function EditSolutionPage() {
     <main class="mx-auto max-w-5xl px-4 py-12">
       <Show when={data()?.status === "invalid_params"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">Invalid Problem</h1>
-          <p class="text-yellow-600">The site, problem ID, or solution ID is not valid.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
+          <p class="text-yellow-600">{t("invalidProblemWithSolutionDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "server_error"}>
         <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-red-700 mb-2">Server Error</h1>
-          <p class="text-red-600">Something went wrong on our end. Please try again later.</p>
+          <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600">{t("serverErrorDesc")}</p>
         </div>
       </Show>
 
       <Show when={data()?.status === "no_solution" || data()?.status === "problem_not_found"}>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 mb-2">No Solution Found</h1>
-          <p class="text-yellow-600 mb-4">You don't have access to that solution.</p>
+          <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("noSolutionFound")}</h1>
+          <p class="text-yellow-600 mb-4">{t("noSolutionFoundDesc")}</p>
           <A
             href={`/problems/${params.site}/${params.externalProblemId}/add-solution`}
             class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
           >
-            Add solution
+            {t("addSolution")}
           </A>
         </div>
       </Show>
@@ -227,13 +228,13 @@ export default function EditSolutionPage() {
           when={!submitted()}
           fallback={
             <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-              <h1 class="text-2xl font-bold text-green-700 mb-2">Solution updated!</h1>
-              <p class="text-green-600 mb-4">Your solution has been saved successfully.</p>
+              <h1 class="text-2xl font-bold text-green-700 mb-2">{t("solutionUpdated")}</h1>
+              <p class="text-green-600 mb-4">{t("solutionSaved")}</p>
               <A
                 href={`/problems/${params.site}/${params.externalProblemId}`}
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Back to problem
+                {t("backToProblem")}
               </A>
             </div>
           }
@@ -243,14 +244,14 @@ export default function EditSolutionPage() {
           <div class="flex flex-col gap-6">
             <div>
               <label for="solution-content" class="block text-sm font-medium text-gray-700 mb-1">
-                Solution (CommonMark, no HTML, KaTeX math supported)
+                {t("solutionEditorLabel")}
               </label>
               <textarea
                 id="solution-content"
                 rows={16}
                 value={content()}
                 onInput={(e) => setContent(e.currentTarget.value)}
-                placeholder="Write your solution here. Use $...$ for inline math and $$...$$ for block math."
+                placeholder={t("solutionEditorPlaceholder")}
                 class="w-full border border-gray-400 bg-white rounded-lg px-4 py-3 font-mono text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
               />
             </div>
@@ -261,7 +262,7 @@ export default function EditSolutionPage() {
                 onClick={updatePreview}
                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-5 py-2 rounded-lg transition-colors"
               >
-                Update preview
+                {t("updatePreview")}
               </button>
               <button
                 type="button"
@@ -269,7 +270,7 @@ export default function EditSolutionPage() {
                 disabled={submitting()}
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
               >
-                {submitting() ? "Saving…" : "Save"}
+                {submitting() ? t("savingEllipsis") : t("save")}
               </button>
             </div>
 
@@ -279,7 +280,7 @@ export default function EditSolutionPage() {
 
             <Show when={previewHtml() !== null}>
               <div>
-                <h2 class="text-lg font-semibold text-gray-800 mb-2">Preview</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">{t("preview")}</h2>
                 <div
                   class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm markdown-content"
                   innerHTML={previewHtml()!}
