@@ -269,29 +269,31 @@ type I18nContextType = {
 const I18nContext = createContext<I18nContextType>();
 
 export function I18nProvider(props: ParentProps) {
-  const getStoredLang = (): Lang | null => {
-    if (typeof window === "undefined") return null;
-    try {
-      const stored = localStorage.getItem("lang") as Lang | null;
-      return stored === "en" || stored === "ko" ? stored : null;
-    } catch {
-      return null;
-    }
-  };
-
   const [lang, setLang] = createSignal<Lang>("en");
 
   onMount(() => {
-    const stored = getStoredLang();
-    if (stored && stored !== lang()) {
-      setLang(stored);
+    if (typeof localStorage !== "undefined") {
+      try {
+        const stored = localStorage.getItem("lang") as Lang | null;
+        if ((stored === "en" || stored === "ko") && stored !== lang()) {
+          setLang(stored);
+        }
+      } catch {
+        // ignore storage failures
+      }
     }
   });
 
   const toggleLang = () => {
     const next: Lang = lang() === "en" ? "ko" : "en";
     setLang(next);
-    localStorage.setItem("lang", next);
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem("lang", next);
+      } catch {
+        // ignore storage failures; keep the in-memory language switch
+      }
+    }
   };
 
   const t = (key: TranslationKey): string =>
