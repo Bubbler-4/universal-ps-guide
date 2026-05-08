@@ -79,6 +79,9 @@ const getProblemData = cache(
       .get();
 
     if (!existing) {
+      if (isLoggedIn) {
+        throw redirect(`/problems/${normalizedSite}/${normalizedId}/set-link`);
+      }
       return { status: "not_found" };
     }
 
