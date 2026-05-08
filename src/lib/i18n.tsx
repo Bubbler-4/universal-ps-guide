@@ -1,5 +1,6 @@
-import { createContext, useContext, ParentProps, onMount } from "solid-js";
+import { createContext, useContext, ParentProps } from "solid-js";
 import { createSignal } from "solid-js";
+import { makePersisted } from "@solid-primitives/storage";
 
 export type Lang = "en" | "ko";
 
@@ -269,31 +270,14 @@ type I18nContextType = {
 const I18nContext = createContext<I18nContextType>();
 
 export function I18nProvider(props: ParentProps) {
-  const [lang, setLang] = createSignal<Lang>("en");
-
-  onMount(() => {
-    if (typeof localStorage !== "undefined") {
-      try {
-        const stored = localStorage.getItem("lang") as Lang | null;
-        if ((stored === "en" || stored === "ko") && stored !== lang()) {
-          setLang(stored);
-        }
-      } catch {
-        // ignore storage failures
-      }
-    }
+  const [lang, setLang] = makePersisted(createSignal<Lang>("en"), {
+    name: "lang",
+    serialize: (value) => value,
+    deserialize: (value) => (value === "ko" ? "ko" : "en"),
   });
 
   const toggleLang = () => {
-    const next: Lang = lang() === "en" ? "ko" : "en";
-    setLang(next);
-    if (typeof localStorage !== "undefined") {
-      try {
-        localStorage.setItem("lang", next);
-      } catch {
-        // ignore storage failures; keep the in-memory language switch
-      }
-    }
+    setLang(lang() === "en" ? "ko" : "en");
   };
 
   const t = (key: TranslationKey): string =>
