@@ -18,7 +18,7 @@ const translations = {
     searchProblem: "Search a Problem",
     onlineJudgeSiteLabel: "Online judge site",
     problemIdLabel: "Problem ID",
-    problemIdPlaceholder: "Problem ID (e.g. 1700A)",
+    problemIdPlaceholder: "Problem ID (e.g. 1234, 1234A, ABC123A)",
     search: "Search",
     // Login page
     signIn: "Sign In",
@@ -146,7 +146,7 @@ const translations = {
     searchProblem: "문제 검색",
     onlineJudgeSiteLabel: "온라인 저지 사이트",
     problemIdLabel: "문제 ID",
-    problemIdPlaceholder: "문제 ID (예: 1700A)",
+    problemIdPlaceholder: "문제 ID (예: 1234, 1234A, ABC123A)",
     search: "검색",
     // Login page
     signIn: "로그인",
