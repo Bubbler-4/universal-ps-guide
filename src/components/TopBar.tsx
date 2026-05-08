@@ -11,9 +11,9 @@ export default function TopBar(props: TopBarProps) {
   const { t, lang, toggleLang } = useI18n();
 
   return (
-    <header class="bg-gray-900 text-white shadow-md">
+    <header class="bg-gray-900 text-white shadow-md dark:bg-gray-950">
       <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
-        <A href="/" class="text-xl font-bold tracking-tight hover:text-gray-300 transition-colors">
+        <A href="/" class="text-xl font-bold tracking-tight hover:text-gray-300 dark:hover:text-gray-200 transition-colors">
           Universal PS Guide
         </A>
         <nav class="flex items-center gap-4 text-sm">
@@ -31,15 +31,15 @@ export default function TopBar(props: TopBarProps) {
             <Show
               when={props.session?.needsUsername}
               fallback={
-                <span class="text-gray-300">
+                <span class="text-gray-300 dark:text-gray-400">
                   {t("signedInAs")}{" "}
-                  <span class="font-semibold text-white">{props.session?.username}</span>
+                  <span class="font-semibold text-white dark:text-gray-100">{props.session?.username}</span>
                 </span>
               }
             >
               <A
                 href="/setup-username"
-                class="text-blue-300 hover:text-blue-200 font-medium transition-colors"
+                class="text-blue-300 hover:text-blue-200 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
               >
                 {t("finishSetup")}
               </A>
@@ -47,7 +47,7 @@ export default function TopBar(props: TopBarProps) {
             <a
               href="/api/auth/signout"
               target="_self"
-              class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
+              class="bg-gray-700 hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
             >
               {t("logout")}
             </a>
@@ -55,7 +55,7 @@ export default function TopBar(props: TopBarProps) {
           <button
             type="button"
             onClick={toggleLang}
-            class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-medium transition-colors"
+            class="bg-gray-700 hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 text-white px-3 py-2 rounded-md font-medium transition-colors"
             aria-label={lang() === "en" ? t("switchToKorean") : t("switchToEnglish")}
           >
             {lang() === "en" ? "한국어" : "English"}
