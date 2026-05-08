@@ -37,3 +37,5 @@ ALTER TABLE `__new_translations` RENAME TO `translations`;
 CREATE UNIQUE INDEX `problems_site_external_problem_id_idx` ON `problems` (`site`,`external_problem_id`);
 --> statement-breakpoint
 CREATE INDEX `translations_problem_id_idx` ON `translations` (`problem_id`);
+--> statement-breakpoint
+CREATE INDEX `translations_author_id_idx` ON `translations` (`author_id`);

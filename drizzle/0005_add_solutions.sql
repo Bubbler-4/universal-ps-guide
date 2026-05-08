@@ -12,3 +12,5 @@ CREATE TABLE `solutions` (
 );
 --> statement-breakpoint
 CREATE INDEX `solutions_problem_id_idx` ON `solutions` (`problem_id`);
+--> statement-breakpoint
+CREATE INDEX `solutions_author_id_idx` ON `solutions` (`author_id`);
