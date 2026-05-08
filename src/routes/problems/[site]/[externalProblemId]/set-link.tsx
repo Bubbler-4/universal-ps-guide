@@ -1,6 +1,6 @@
 import { createEffect, createSignal, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect, useParams, A } from "@solidjs/router";
+import { cache, createAsync, redirect, useParams } from "@solidjs/router";
 import { eq, and } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
@@ -16,7 +16,6 @@ type PageData =
       externalProblemId: string;
       currentLink: string;
     }
-  | { status: "problem_not_found" }
   | { status: "invalid_params" }
   | { status: "server_error" };
 
@@ -56,15 +55,11 @@ const getSetLinkData = cache(
       .where(and(eq(problems.site, normalizedSite), eq(problems.externalProblemId, normalizedId)))
       .get();
 
-    if (!problem) {
-      return { status: "problem_not_found" };
-    }
-
     return {
       status: "ok",
       site: normalizedSite,
       externalProblemId: normalizedId,
-      currentLink: problem.externalProblemLink,
+      currentLink: problem?.externalProblemLink ?? "",
     };
   },
   "getSetLinkData"
@@ -120,10 +115,14 @@ export default function SetLinkPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/problems/${d.site}/${d.externalProblemId}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/problems/resolve`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ externalProblemLink: trimmed }),
+        body: JSON.stringify({
+          site: d.site,
+          externalProblemId: d.externalProblemId,
+          externalProblemLink: trimmed,
+        }),
       });
 
       if (!res.ok) {
@@ -154,21 +153,6 @@ export default function SetLinkPage() {
         <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
           <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("serverError")}</h1>
           <p class="text-red-600 dark:text-red-400">{t("serverErrorDesc")}</p>
-        </div>
-      </Show>
-
-      <Show when={data()?.status === "problem_not_found"}>
-        <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
-          <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("problemNotFound")}</h1>
-          <p class="text-yellow-600 dark:text-yellow-400 mb-4">
-            {t("problemNotFoundSetLinkDesc")}
-          </p>
-          <A
-            href={`/problems/${params.site}/${params.externalProblemId}`}
-            class="inline-block bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-medium px-5 py-2 rounded-lg transition-colors"
-          >
-            {t("goToProblemPage")}
-          </A>
         </div>
       </Show>
 
