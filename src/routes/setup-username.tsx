@@ -67,14 +67,14 @@ export default function SetupUsernamePage() {
 
   return (
     <main class="mx-auto max-w-md px-4 py-16">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">{t("chooseUsername")}</h1>
-      <p class="text-gray-500 mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t("chooseUsername")}</h1>
+      <p class="text-gray-500 dark:text-gray-400 mb-8">
         {t("chooseUsernameSubtitle")}
       </p>
 
       <form onSubmit={handleSubmit} class="flex flex-col gap-4">
         <div>
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t("usernameLabel")}
           </label>
           <input
@@ -84,27 +84,27 @@ export default function SetupUsernamePage() {
             value={username()}
             onInput={e => setUsername(e.currentTarget.value)}
             placeholder={t("usernamePlaceholder")}
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
           />
           <Show when={validationError()}>
-            <p class="mt-1 text-sm text-red-600">{validationError()}</p>
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{validationError()}</p>
           </Show>
         </div>
 
         <Show when={error()}>
-          <p class="text-sm text-red-600">{error()}</p>
+          <p class="text-sm text-red-600 dark:text-red-400">{error()}</p>
         </Show>
 
         <button
           type="submit"
           disabled={submitting() || !USERNAME_RE.test(username().trim())}
-          class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+          class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors"
         >
           {submitting() ? t("savingEllipsis") : t("saveUsername")}
         </button>
       </form>
 
-      <p class="mt-4 text-xs text-gray-400">
+      <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">
         {t("usernameAllowedChars")}
       </p>
     </main>

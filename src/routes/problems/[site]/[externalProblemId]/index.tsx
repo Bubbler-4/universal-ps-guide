@@ -298,16 +298,16 @@ export default function ProblemPage() {
 
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
-      <Switch fallback={<p class="text-gray-500">{t("loading")}</p>}>
+      <Switch fallback={<p class="text-gray-500 dark:text-gray-400">{t("loading")}</p>}>
         <Match when={data()?.status === "found"}>
-          <h1 class="text-3xl font-bold text-gray-900 mb-4">{heading()}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">{heading()}</h1>
 
           <div class="mb-8">
             <a
               href={foundData()!.externalProblemLink}
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              class="inline-flex items-center gap-1 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
               {t("viewOriginalProblem")}
             </a>
@@ -316,12 +316,12 @@ export default function ProblemPage() {
           {/* Translations section */}
           <section class="mb-10">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">{t("translationsSection")}</h2>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">{t("translationsSection")}</h2>
               {/* "Add translation" only for logged-in users who don't own one yet */}
               <Show when={foundData()?.isLoggedIn && !userOwnsATranslation()}>
                 <A
                   href={`/problems/${params.site}/${params.externalProblemId}/add-translation`}
-                  class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                 >
                   {t("addTranslation")}
                 </A>
@@ -331,18 +331,18 @@ export default function ProblemPage() {
             <Show
               when={(foundData()?.translations.length ?? 0) > 0}
               fallback={
-                <p class="text-gray-500 italic">{t("noTranslationsYet")}</p>
+                <p class="text-gray-500 dark:text-gray-400 italic">{t("noTranslationsYet")}</p>
               }
             >
               {/* Dropdown to pick a translation when there are multiple */}
               <Show when={(foundData()?.translations.length ?? 0) > 1}>
                 <div class="mb-4">
-                  <label for="translation-select" class="block text-sm font-medium text-gray-700 mb-1">
+                  <label for="translation-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     {t("selectTranslation")}
                   </label>
                   <select
                     id="translation-select"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                     onChange={(e) => setSelectedIdx(Number(e.currentTarget.value))}
                     value={selectedIdx()}
                   >
@@ -359,9 +359,9 @@ export default function ProblemPage() {
 
               {/* Rendered translation content */}
               <Show when={selectedTranslation()}>
-                <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-900 shadow-sm dark:shadow-none">
                   <div class="flex items-center justify-between mb-3">
-                    <p class="text-xs text-gray-400">
+                    <p class="text-xs text-gray-400 dark:text-gray-500">
                       {t("by")} {selectedTranslation()!.authorUsername ?? t("anonymous")}
                     </p>
                     {/* Edit/Delete buttons shown only for the user's own translation */}
@@ -369,7 +369,7 @@ export default function ProblemPage() {
                       <div class="flex gap-2">
                         <A
                           href={`/problems/${params.site}/${params.externalProblemId}/edit-translation`}
-                          class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                          class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                         >
                           {t("editTranslation")}
                         </A>
@@ -377,7 +377,7 @@ export default function ProblemPage() {
                           type="button"
                           onClick={handleDelete}
                           disabled={deleting()}
-                          class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                          class="bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 dark:text-red-300 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                         >
                           {deleting() ? t("deletingEllipsis") : t("deleteTranslation")}
                         </button>
@@ -385,7 +385,7 @@ export default function ProblemPage() {
                     </Show>
                   </div>
                   <Show when={deleteError()}>
-                    <p class="text-sm text-red-600 mb-2">{deleteError()}</p>
+                    <p class="text-sm text-red-600 dark:text-red-400 mb-2">{deleteError()}</p>
                   </Show>
                   <div
                     class="markdown-content"
@@ -398,11 +398,11 @@ export default function ProblemPage() {
 
           <section>
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">{t("solutionsSection")}</h2>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">{t("solutionsSection")}</h2>
               <Show when={foundData()?.isLoggedIn}>
                 <A
                   href={`/problems/${params.site}/${params.externalProblemId}/add-solution`}
-                  class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                 >
                   {t("addSolution")}
                 </A>
@@ -411,11 +411,11 @@ export default function ProblemPage() {
 
             <Show
               when={(foundData()?.solutions.length ?? 0) > 0}
-              fallback={<p class="text-gray-500 italic">{t("noSolutionsYet")}</p>}
+              fallback={<p class="text-gray-500 dark:text-gray-400 italic">{t("noSolutionsYet")}</p>}
             >
               <div class="flex flex-col gap-4">
                 <Show when={foundData()?.solutionsTruncated}>
-                  <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
+                  <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3 text-sm text-yellow-800 dark:text-yellow-200">
                     {tf("showingFirstNSolutions", { n: MAX_VISIBLE_SOLUTIONS })}
                   </div>
                 </Show>
@@ -431,18 +431,18 @@ export default function ProblemPage() {
                     const bodyId = `solution-body-${solution.id}`;
 
                     return (
-                      <div class="border border-gray-200 rounded-xl bg-white shadow-sm">
+                      <div class="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 shadow-sm dark:shadow-none">
                         {/* Always-visible accordion header — plain div, not a button */}
                         <div class="flex w-full items-center justify-between gap-3 px-6 py-4">
                           <div class="flex items-center gap-3 flex-1 min-w-0">
-                            <p class="text-xs text-gray-400 shrink-0">
+                            <p class="text-xs text-gray-400 dark:text-gray-500 shrink-0">
                               {t("by")} {solution.authorUsername ?? t("anonymous")}
                             </p>
                             <Show when={isOwned()}>
                               <div class="flex gap-2 shrink-0">
                                 <A
                                   href={`/problems/${params.site}/${params.externalProblemId}/edit-solution/${solution.id}`}
-                                  class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                                  class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                                 >
                                   {t("editSolution")}
                                 </A>
@@ -450,7 +450,7 @@ export default function ProblemPage() {
                                   type="button"
                                   onClick={() => handleSolutionDelete(solution.id)}
                                   disabled={deletingSolutionId() === solution.id}
-                                  class="bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
+                                  class="bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 disabled:opacity-50 disabled:cursor-not-allowed text-red-700 dark:text-red-300 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                                 >
                                   {deletingSolutionId() === solution.id
                                     ? t("deletingEllipsis")
@@ -462,7 +462,7 @@ export default function ProblemPage() {
                           {/* Dedicated toggle button — only the chevron, properly accessible */}
                           <button
                             type="button"
-                            class="p-1 rounded-lg hover:bg-gray-100 transition-colors shrink-0 text-gray-500"
+                            class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0 text-gray-500 dark:text-gray-400"
                             onClick={() => toggleSolution(solution.id)}
                             aria-expanded={isOpen()}
                             aria-controls={bodyId}
@@ -489,7 +489,7 @@ export default function ProblemPage() {
                         {/* Error message in header area (always visible) */}
                         <Show when={solutionDeleteError()?.id === solution.id}>
                           <div class="px-6 pb-4">
-                            <p class="text-sm text-red-600">
+                            <p class="text-sm text-red-600 dark:text-red-400">
                               {solutionDeleteError()!.message}
                             </p>
                           </div>
@@ -497,9 +497,9 @@ export default function ProblemPage() {
 
                         {/* Collapsible solution body */}
                         <Show when={isOpen()}>
-                          <div id={bodyId} class="px-6 pb-6 border-t border-gray-100">
+                          <div id={bodyId} class="px-6 pb-6 border-t border-gray-100 dark:border-gray-800">
                             <Show when={solutionDeleteError()?.id === solution.id}>
-                              <p class="text-sm text-red-600 mt-4 mb-2">
+                              <p class="text-sm text-red-600 dark:text-red-400 mt-4 mb-2">
                                 {solutionDeleteError()!.message}
                               </p>
                             </Show>
@@ -515,25 +515,25 @@ export default function ProblemPage() {
           </section>
         </Match>
         <Match when={data()?.status === "not_found"}>
-          <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-red-700 mb-2">{t("problemNotFound")}</h1>
-            <p class="text-red-600">
+          <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+            <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("problemNotFound")}</h1>
+            <p class="text-red-600 dark:text-red-400">
               {t("problemNotFoundDesc")}
             </p>
           </div>
         </Match>
         <Match when={data()?.status === "invalid_params"}>
-          <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-yellow-700 mb-2">{t("invalidProblem")}</h1>
-            <p class="text-yellow-600">
+          <div class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-8 text-center">
+            <h1 class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">{t("invalidProblem")}</h1>
+            <p class="text-yellow-600 dark:text-yellow-400">
               {t("invalidProblemDesc")}
             </p>
           </div>
         </Match>
         <Match when={data()?.status === "server_error"}>
-          <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-            <h1 class="text-2xl font-bold text-red-700 mb-2">{t("serverError")}</h1>
-            <p class="text-red-600">
+          <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+            <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("serverError")}</h1>
+            <p class="text-red-600 dark:text-red-400">
               {t("serverErrorDesc")}
             </p>
           </div>
