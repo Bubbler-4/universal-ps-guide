@@ -223,7 +223,7 @@ export default function Home() {
                 </For>
                 {(homeData()?.recentProblems.length ?? 0) === 0 && (
                   <tr>
-                    <td colspan={4} class="py-3 text-gray-500 dark:text-gray-400">
+                    <td colSpan={4} class="py-3 text-gray-500 dark:text-gray-400">
                       {t("noRecentItems")}
                     </td>
                   </tr>
@@ -257,7 +257,7 @@ export default function Home() {
                 </For>
                 {(homeData()?.recentTranslations.length ?? 0) === 0 && (
                   <tr>
-                    <td colspan={3} class="py-3 text-gray-500 dark:text-gray-400">
+                    <td colSpan={3} class="py-3 text-gray-500 dark:text-gray-400">
                       {t("noRecentItems")}
                     </td>
                   </tr>
@@ -291,7 +291,7 @@ export default function Home() {
                 </For>
                 {(homeData()?.recentSolutions.length ?? 0) === 0 && (
                   <tr>
-                    <td colspan={3} class="py-3 text-gray-500 dark:text-gray-400">
+                    <td colSpan={3} class="py-3 text-gray-500 dark:text-gray-400">
                       {t("noRecentItems")}
                     </td>
                   </tr>
