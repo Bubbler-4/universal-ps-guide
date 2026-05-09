@@ -73,66 +73,66 @@ const getHomeData = cache(async (): Promise<HomeData> => {
     .groupBy(solutions.problemId)
     .as("solution_counts");
 
-  const recentProblems = await db
-    .select({
-      site: problems.site,
-      externalProblemId: problems.externalProblemId,
-      translationCount: sql<number>`coalesce(${translationCounts.translationCount}, 0)`
-        .mapWith(Number)
-        .as("translationCount"),
-      solutionCount: sql<number>`coalesce(${solutionCounts.solutionCount}, 0)`
-        .mapWith(Number)
-        .as("solutionCount"),
-    })
-    .from(problems)
-    .leftJoin(translationCounts, eq(translationCounts.problemId, problems.id))
-    .leftJoin(solutionCounts, eq(solutionCounts.problemId, problems.id))
-    .where(and(eq(problems.status, "active"), isNull(problems.deletedAt)))
-    .orderBy(desc(problems.createdAt))
-    .limit(20)
-    .all();
-
-  const recentTranslations = await db
-    .select({
-      site: problems.site,
-      externalProblemId: problems.externalProblemId,
-      authorUsername: users.username,
-    })
-    .from(translations)
-    .innerJoin(problems, eq(problems.id, translations.problemId))
-    .leftJoin(users, eq(users.id, translations.authorId))
-    .where(
-      and(
-        eq(translations.status, "active"),
-        isNull(translations.deletedAt),
-        eq(problems.status, "active"),
-        isNull(problems.deletedAt)
+  const [recentProblems, recentTranslations, recentSolutions] = await Promise.all([
+    db
+      .select({
+        site: problems.site,
+        externalProblemId: problems.externalProblemId,
+        translationCount: sql<number>`coalesce(${translationCounts.translationCount}, 0)`
+          .mapWith(Number)
+          .as("translationCount"),
+        solutionCount: sql<number>`coalesce(${solutionCounts.solutionCount}, 0)`
+          .mapWith(Number)
+          .as("solutionCount"),
+      })
+      .from(problems)
+      .leftJoin(translationCounts, eq(translationCounts.problemId, problems.id))
+      .leftJoin(solutionCounts, eq(solutionCounts.problemId, problems.id))
+      .where(and(eq(problems.status, "active"), isNull(problems.deletedAt)))
+      .orderBy(desc(problems.createdAt))
+      .limit(20)
+      .all(),
+    db
+      .select({
+        site: problems.site,
+        externalProblemId: problems.externalProblemId,
+        authorUsername: users.username,
+      })
+      .from(translations)
+      .innerJoin(problems, eq(problems.id, translations.problemId))
+      .leftJoin(users, eq(users.id, translations.authorId))
+      .where(
+        and(
+          eq(translations.status, "active"),
+          isNull(translations.deletedAt),
+          eq(problems.status, "active"),
+          isNull(problems.deletedAt)
+        )
       )
-    )
-    .orderBy(desc(translations.createdAt))
-    .limit(20)
-    .all();
-
-  const recentSolutions = await db
-    .select({
-      site: problems.site,
-      externalProblemId: problems.externalProblemId,
-      authorUsername: users.username,
-    })
-    .from(solutions)
-    .innerJoin(problems, eq(problems.id, solutions.problemId))
-    .leftJoin(users, eq(users.id, solutions.authorId))
-    .where(
-      and(
-        eq(solutions.status, "active"),
-        isNull(solutions.deletedAt),
-        eq(problems.status, "active"),
-        isNull(problems.deletedAt)
+      .orderBy(desc(translations.createdAt))
+      .limit(20)
+      .all(),
+    db
+      .select({
+        site: problems.site,
+        externalProblemId: problems.externalProblemId,
+        authorUsername: users.username,
+      })
+      .from(solutions)
+      .innerJoin(problems, eq(problems.id, solutions.problemId))
+      .leftJoin(users, eq(users.id, solutions.authorId))
+      .where(
+        and(
+          eq(solutions.status, "active"),
+          isNull(solutions.deletedAt),
+          eq(problems.status, "active"),
+          isNull(problems.deletedAt)
+        )
       )
-    )
-    .orderBy(desc(solutions.createdAt))
-    .limit(20)
-    .all();
+      .orderBy(desc(solutions.createdAt))
+      .limit(20)
+      .all(),
+  ]);
 
   return { recentProblems, recentTranslations, recentSolutions };
 }, "getHomeData");
@@ -148,6 +148,8 @@ export default function Home() {
   const [site, setSite] = createSignal(SITES[0].toLowerCase());
   const [problemId, setProblemId] = createSignal("");
   const { t } = useI18n();
+  const problemHref = (site: string, externalProblemId: string) =>
+    `/problems/${site.toLowerCase()}/${encodeURIComponent(externalProblemId)}`;
 
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
@@ -214,8 +216,16 @@ export default function Home() {
                 <For each={homeData()?.recentProblems ?? []}>
                   {(row) => (
                     <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                      <td class="py-2 pr-3">{row.site}</td>
-                      <td class="py-2 pr-3">{row.externalProblemId}</td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.site}
+                        </a>
+                      </td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.externalProblemId}
+                        </a>
+                      </td>
                       <td class="py-2 pr-3">{row.translationCount}</td>
                       <td class="py-2">{row.solutionCount}</td>
                     </tr>
@@ -249,8 +259,16 @@ export default function Home() {
                 <For each={homeData()?.recentTranslations ?? []}>
                   {(row) => (
                     <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                      <td class="py-2 pr-3">{row.site}</td>
-                      <td class="py-2 pr-3">{row.externalProblemId}</td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.site}
+                        </a>
+                      </td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.externalProblemId}
+                        </a>
+                      </td>
                       <td class="py-2">{row.authorUsername ?? t("anonymous")}</td>
                     </tr>
                   )}
@@ -283,8 +301,16 @@ export default function Home() {
                 <For each={homeData()?.recentSolutions ?? []}>
                   {(row) => (
                     <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                      <td class="py-2 pr-3">{row.site}</td>
-                      <td class="py-2 pr-3">{row.externalProblemId}</td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.site}
+                        </a>
+                      </td>
+                      <td class="py-2 pr-3">
+                        <a href={problemHref(row.site, row.externalProblemId)} class="hover:underline">
+                          {row.externalProblemId}
+                        </a>
+                      </td>
                       <td class="py-2">{row.authorUsername ?? t("anonymous")}</td>
                     </tr>
                   )}
