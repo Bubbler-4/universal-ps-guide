@@ -21,6 +21,10 @@ const translations = {
     problemIdLabel: "Problem ID",
     problemIdPlaceholder: "Problem ID (e.g. 1234, 1234A, ABC123A)",
     search: "Search",
+    recentProblems: "Recently Added Problems",
+    recentTranslations: "Recently Added Translations",
+    recentSolutions: "Recently Added Solutions",
+    noRecentItems: "No items yet.",
     // Login page
     signIn: "Sign In",
     signInSubtitle: "Sign in to submit translations and solutions.",
@@ -149,6 +153,10 @@ const translations = {
     problemIdLabel: "문제 ID",
     problemIdPlaceholder: "문제 ID (예: 1234, 1234A, ABC123A)",
     search: "검색",
+    recentProblems: "최근 추가된 문제",
+    recentTranslations: "최근 추가된 번역",
+    recentSolutions: "최근 추가된 풀이",
+    noRecentItems: "아직 항목이 없습니다.",
     // Login page
     signIn: "로그인",
     signInSubtitle: "번역, 풀이를 제출하려면 로그인하세요.",
