@@ -21,11 +21,12 @@ export async function GET(event: APIEvent) {
       title: collections.title,
       createdAt: collections.createdAt,
       updatedAt: collections.updatedAt,
-      problemCount: count(collectionProblems.problemId),
+      problemCount: count(problems.id),
     })
     .from(collections)
     .leftJoin(users, eq(users.id, collections.authorId))
     .leftJoin(collectionProblems, eq(collectionProblems.collectionId, collections.id))
+    .leftJoin(problems, and(eq(problems.id, collectionProblems.problemId), isNull(problems.deletedAt)))
     .where(isNull(collections.deletedAt))
     .groupBy(
       collections.id,

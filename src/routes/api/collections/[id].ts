@@ -167,7 +167,7 @@ export async function PUT(event: APIEvent) {
     db
       .update(collections)
       .set({ title: title.trim(), updatedAt: sql`(datetime('now'))` })
-      .where(eq(collections.id, id)),
+      .where(and(eq(collections.id, id), eq(collections.authorId, session.dbUserId), isNull(collections.deletedAt))),
     db.delete(collectionProblems).where(eq(collectionProblems.collectionId, id)),
     ...(problemIds.length > 0
       ? [
@@ -193,7 +193,7 @@ export async function PUT(event: APIEvent) {
   const updatedCollection = await db
     .select()
     .from(collections)
-    .where(eq(collections.id, id))
+    .where(and(eq(collections.id, id), eq(collections.authorId, session.dbUserId), isNull(collections.deletedAt)))
     .get();
 
   if (!updatedCollection) {
@@ -255,7 +255,7 @@ export async function DELETE(event: APIEvent) {
   await db
     .update(collections)
     .set({ deletedAt: sql`(datetime('now'))` })
-    .where(eq(collections.id, id))
+    .where(and(eq(collections.id, id), eq(collections.authorId, session.dbUserId), isNull(collections.deletedAt)))
     .run();
 
   return new Response(JSON.stringify({ success: true }), {
