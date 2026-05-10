@@ -115,11 +115,17 @@ export async function POST(event: APIEvent) {
     }
   }
 
-  const collection = await db
-    .insert(collections)
-    .values({ authorId: session.dbUserId, title: title.trim() })
-    .returning()
-    .get();
+  const collection = await (async () => {
+    try {
+      return await db
+        .insert(collections)
+        .values({ authorId: session.dbUserId, title: title.trim() })
+        .returning()
+        .get();
+    } catch {
+      return null;
+    }
+  })();
 
   if (!collection) {
     return new Response(JSON.stringify({ error: "Failed to create collection" }), {
@@ -128,17 +134,25 @@ export async function POST(event: APIEvent) {
     });
   }
 
-  if (problemIds.length > 0) {
-    await db
-      .insert(collectionProblems)
-      .values(
-        problemIds.map((problemId, index) => ({
-          collectionId: collection.id,
-          problemId,
-          position: index,
-        }))
-      )
-      .run();
+  try {
+    if (problemIds.length > 0) {
+      await db
+        .insert(collectionProblems)
+        .values(
+          problemIds.map((problemId, index) => ({
+            collectionId: collection.id,
+            problemId,
+            position: index,
+          }))
+        )
+        .run();
+    }
+  } catch {
+    await db.delete(collections).where(eq(collections.id, collection.id)).run().catch(() => undefined);
+    return new Response(JSON.stringify({ error: "Failed to create collection" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return new Response(JSON.stringify({ collection }), {
