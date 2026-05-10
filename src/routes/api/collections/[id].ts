@@ -4,24 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-
-const MAX_COLLECTION_PROBLEMS = 100;
-
-function parseProblemIds(value: unknown): { valid: true; problemIds: number[] } | { valid: false } {
-  if (!Array.isArray(value)) {
-    return { valid: false };
-  }
-
-  const parsed: number[] = [];
-  for (const id of value) {
-    if (!Number.isInteger(id) || (id as number) <= 0) {
-      return { valid: false };
-    }
-    parsed.push(id as number);
-  }
-
-  return { valid: true, problemIds: parsed };
-}
+import { MAX_COLLECTION_PROBLEMS, parseProblemIds } from "./validation";
 
 /**
  * GET /api/collections/:id
@@ -180,26 +163,44 @@ export async function PUT(event: APIEvent) {
     }
   }
 
+  const replaceQueries = [
+    db
+      .update(collections)
+      .set({ title: title.trim(), updatedAt: sql`(datetime('now'))` })
+      .where(eq(collections.id, id)),
+    db.delete(collectionProblems).where(eq(collectionProblems.collectionId, id)),
+    ...(problemIds.length > 0
+      ? [
+          db.insert(collectionProblems).values(
+            problemIds.map((problemId, index) => ({
+              collectionId: id,
+              problemId,
+              position: index,
+            }))
+          ),
+        ]
+      : []),
+  ];
+
+  if ("batch" in db && typeof db.batch === "function") {
+    await db.batch(replaceQueries);
+  } else {
+    for (const query of replaceQueries) {
+      await query.run();
+    }
+  }
+
   const updatedCollection = await db
-    .update(collections)
-    .set({ title: title.trim(), updatedAt: sql`(datetime('now'))` })
+    .select()
+    .from(collections)
     .where(eq(collections.id, id))
-    .returning()
     .get();
 
-  await db.delete(collectionProblems).where(eq(collectionProblems.collectionId, id)).run();
-
-  if (problemIds.length > 0) {
-    await db
-      .insert(collectionProblems)
-      .values(
-        problemIds.map((problemId, index) => ({
-          collectionId: id,
-          problemId,
-          position: index,
-        }))
-      )
-      .run();
+  if (!updatedCollection) {
+    return new Response(JSON.stringify({ error: "Collection not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return new Response(JSON.stringify({ collection: updatedCollection }), {

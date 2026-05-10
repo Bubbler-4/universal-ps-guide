@@ -4,24 +4,7 @@ import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-
-const MAX_COLLECTION_PROBLEMS = 100;
-
-function parseProblemIds(value: unknown): { valid: true; problemIds: number[] } | { valid: false } {
-  if (!Array.isArray(value)) {
-    return { valid: false };
-  }
-
-  const parsed: number[] = [];
-  for (const id of value) {
-    if (!Number.isInteger(id) || (id as number) <= 0) {
-      return { valid: false };
-    }
-    parsed.push(id as number);
-  }
-
-  return { valid: true, problemIds: parsed };
-}
+import { MAX_COLLECTION_PROBLEMS, parseProblemIds } from "./validation";
 
 /**
  * GET /api/collections
