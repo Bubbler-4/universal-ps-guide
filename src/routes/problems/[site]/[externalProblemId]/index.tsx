@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, Show, Switch, Match } from "solid-js";
+import { createEffect, createSignal, For, Show, Switch, Match, onCleanup } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, revalidate, useParams, A } from "@solidjs/router";
 import { eq, and, isNull, asc } from "drizzle-orm";
@@ -297,6 +297,10 @@ export default function ProblemPage() {
     if (d?.status === "found") {
       document.title = heading();
     }
+  });
+
+  onCleanup(() => {
+    document.title = "Universal PS Guide";
   });
 
   return (
