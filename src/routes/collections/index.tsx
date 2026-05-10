@@ -27,7 +27,7 @@ type CollectionsPageData =
     }
   | { status: "server_error" };
 
-const getCollectionsPageData = cache(async (): Promise<CollectionsPageData> => {
+const getCollectionsPageData = async (): Promise<CollectionsPageData> => {
   "use server";
 
   const event = getRequestEvent();
@@ -75,7 +75,7 @@ const getCollectionsPageData = cache(async (): Promise<CollectionsPageData> => {
     .all();
 
   return { status: "ok", rows, page, totalPages, isLoggedIn };
-}, "getCollectionsPageData");
+};
 
 export const route = {
   load: () => getCollectionsPageData(),

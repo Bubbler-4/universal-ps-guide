@@ -19,6 +19,7 @@ type EditCollectionData =
   | {
       status: "ok";
       collectionId: number;
+      authorId: number;
       title: string;
       problems: SelectedProblem[];
     }
@@ -27,13 +28,59 @@ type EditCollectionData =
   | { status: "forbidden" }
   | { status: "server_error" };
 
-const getEditCollectionData = cache(async (idParam: string): Promise<EditCollectionData> => {
+const fetchCollectionForEdit = cache(async (idParam: string) => {
   "use server";
 
   const id = Number(idParam);
   if (!Number.isInteger(id) || id <= 0) {
-    return { status: "invalid_id" };
+    return { status: "invalid_id" as const };
   }
+
+  const event = getRequestEvent();
+  if (!event) return { status: "server_error" as const };
+
+  const env = getCloudflareEnv(event);
+  if (!env.DB) return { status: "server_error" as const };
+
+  const db = getDb(env.DB as never);
+
+  const collection = await db
+    .select({
+      id: collections.id,
+      authorId: collections.authorId,
+      title: collections.title,
+    })
+    .from(collections)
+    .where(and(eq(collections.id, id), isNull(collections.deletedAt)))
+    .get();
+
+  if (!collection) {
+    return { status: "not_found" as const };
+  }
+
+  const rows = await db
+    .select({
+      id: problems.id,
+      site: problems.site,
+      externalProblemId: problems.externalProblemId,
+    })
+    .from(collectionProblems)
+    .innerJoin(problems, eq(problems.id, collectionProblems.problemId))
+    .where(and(eq(collectionProblems.collectionId, id), isNull(problems.deletedAt)))
+    .orderBy(asc(collectionProblems.position))
+    .all();
+
+  return {
+    status: "ok" as const,
+    collectionId: collection.id,
+    authorId: collection.authorId,
+    title: collection.title,
+    problems: rows,
+  };
+}, "fetchCollectionForEdit");
+
+const getEditCollectionData = async (idParam: string): Promise<EditCollectionData> => {
+  "use server";
 
   const event = getRequestEvent();
   if (!event) return { status: "server_error" };
@@ -52,44 +99,18 @@ const getEditCollectionData = cache(async (idParam: string): Promise<EditCollect
     return { status: "server_error" };
   }
 
-  const db = getDb(env.DB as never);
+  const data = await fetchCollectionForEdit(idParam);
 
-  const collection = await db
-    .select({
-      id: collections.id,
-      authorId: collections.authorId,
-      title: collections.title,
-    })
-    .from(collections)
-    .where(and(eq(collections.id, id), isNull(collections.deletedAt)))
-    .get();
-
-  if (!collection) {
-    return { status: "not_found" };
+  if (data.status !== "ok") {
+    return data;
   }
-  if (collection.authorId !== session.dbUserId) {
+
+  if (data.authorId !== session.dbUserId) {
     return { status: "forbidden" };
   }
 
-  const rows = await db
-    .select({
-      id: problems.id,
-      site: problems.site,
-      externalProblemId: problems.externalProblemId,
-    })
-    .from(collectionProblems)
-    .innerJoin(problems, eq(problems.id, collectionProblems.problemId))
-    .where(and(eq(collectionProblems.collectionId, id), isNull(problems.deletedAt)))
-    .orderBy(asc(collectionProblems.position))
-    .all();
-
-  return {
-    status: "ok",
-    collectionId: collection.id,
-    title: collection.title,
-    problems: rows,
-  };
-}, "getEditCollectionData");
+  return data;
+};
 
 export const route = {
   load: ({ params }: { params: { id: string } }) => getEditCollectionData(params.id),

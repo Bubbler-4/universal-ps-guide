@@ -42,7 +42,7 @@ export const route = {
 };
 
 export default function AddCollectionPage() {
-  createAsync(() => getAddCollectionData());
+  const data = createAsync(() => getAddCollectionData());
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -156,9 +156,17 @@ export default function AddCollectionPage() {
 
   return (
     <main class="mx-auto max-w-5xl px-4 py-12">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">{t("addCollection")}</h1>
+      <Show when={data()?.status === "server_error"}>
+        <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
+          <h1 class="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">{t("serverError")}</h1>
+          <p class="text-red-600 dark:text-red-400">{t("serverErrorDesc")}</p>
+        </div>
+      </Show>
 
-      <div class="space-y-6">
+      <Show when={data()?.status === "ok"}>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">{t("addCollection")}</h1>
+
+        <div class="space-y-6">
         <div>
           <label for="collection-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t("collectionTitle")}
@@ -265,6 +273,7 @@ export default function AddCollectionPage() {
           </A>
         </div>
       </div>
+      </Show>
     </main>
   );
 }

@@ -28,22 +28,21 @@ type PageData =
   | { status: "not_found" }
   | { status: "server_error" };
 
-const getCollectionData = cache(async (idParam: string): Promise<PageData> => {
+const fetchCollection = cache(async (idParam: string) => {
   "use server";
 
   const id = Number(idParam);
   if (!Number.isInteger(id) || id <= 0) {
-    return { status: "invalid_id" };
+    return { status: "invalid_id" as const };
   }
 
   const event = getRequestEvent();
-  if (!event) return { status: "server_error" };
+  if (!event) return { status: "server_error" as const };
 
   const env = getCloudflareEnv(event);
-  if (!env.DB) return { status: "server_error" };
+  if (!env.DB) return { status: "server_error" as const };
 
   const db = getDb(env.DB as never);
-  const session = await getServerSession(event.request, env);
 
   const collection = await db
     .select({
@@ -57,7 +56,7 @@ const getCollectionData = cache(async (idParam: string): Promise<PageData> => {
     .where(and(eq(collections.id, id), isNull(collections.deletedAt)))
     .get();
 
-  if (!collection) return { status: "not_found" };
+  if (!collection) return { status: "not_found" as const };
 
   const rows = await db
     .select({
@@ -71,10 +70,29 @@ const getCollectionData = cache(async (idParam: string): Promise<PageData> => {
     .orderBy(asc(collectionProblems.position))
     .all();
 
-  const canEdit = !!(session && !session.needsUsername && session.dbUserId === collection.authorId);
+  return { status: "ok" as const, collection, problems: rows };
+}, "fetchCollection");
 
-  return { status: "ok", collection, problems: rows, canEdit };
-}, "getCollectionData");
+const getCollectionData = async (idParam: string): Promise<PageData> => {
+  "use server";
+
+  const event = getRequestEvent();
+  if (!event) return { status: "server_error" };
+
+  const env = getCloudflareEnv(event);
+  if (!env.DB) return { status: "server_error" };
+
+  const data = await fetchCollection(idParam);
+
+  if (data.status !== "ok") {
+    return data;
+  }
+
+  const session = await getServerSession(event.request, env);
+  const canEdit = !!(session && !session.needsUsername && session.dbUserId === data.collection.authorId);
+
+  return { ...data, canEdit };
+};
 
 export const route = {
   load: ({ params }: { params: { id: string } }) => getCollectionData(params.id),
