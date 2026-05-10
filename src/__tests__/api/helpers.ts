@@ -55,6 +55,30 @@ CREATE TABLE IF NOT EXISTS solutions (
 );
 
 CREATE INDEX IF NOT EXISTS solutions_problem_id_idx ON solutions (problem_id);
+
+CREATE TABLE IF NOT EXISTS collections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  author_id INTEGER NOT NULL REFERENCES users(id),
+  title TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  deleted_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS collections_author_id_idx ON collections (author_id);
+
+CREATE TABLE IF NOT EXISTS collection_problems (
+  collection_id INTEGER NOT NULL REFERENCES collections(id),
+  problem_id INTEGER NOT NULL REFERENCES problems(id),
+  position INTEGER NOT NULL,
+  PRIMARY KEY (collection_id, problem_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS collection_problems_collection_id_position_idx
+  ON collection_problems (collection_id, position);
+
+CREATE INDEX IF NOT EXISTS collection_problems_problem_id_idx
+  ON collection_problems (problem_id);
 `;
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -147,6 +171,52 @@ export function seedSolutions(
       row.createdAt ?? null,
       row.deletedAt ?? null
     );
+  }
+}
+
+/** Seed one or more collection rows using parameterized statements (avoids SQL injection). */
+export function seedCollections(
+  sqlite: Database.Database,
+  rows: Array<{
+    id?: number;
+    authorId: number;
+    title: string;
+    deletedAt?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }>
+): void {
+  const stmt = sqlite.prepare(
+    `INSERT INTO collections (id, author_id, title, created_at, updated_at, deleted_at)
+     VALUES (?, ?, ?, COALESCE(?, datetime('now')), COALESCE(?, datetime('now')), ?)`
+  );
+  for (const row of rows) {
+    stmt.run(
+      row.id ?? null,
+      row.authorId,
+      row.title,
+      row.createdAt ?? null,
+      row.updatedAt ?? null,
+      row.deletedAt ?? null
+    );
+  }
+}
+
+/** Seed one or more collection-problem mapping rows using parameterized statements. */
+export function seedCollectionProblems(
+  sqlite: Database.Database,
+  rows: Array<{
+    collectionId: number;
+    problemId: number;
+    position: number;
+  }>
+): void {
+  const stmt = sqlite.prepare(
+    `INSERT INTO collection_problems (collection_id, problem_id, position)
+     VALUES (?, ?, ?)`
+  );
+  for (const row of rows) {
+    stmt.run(row.collectionId, row.problemId, row.position);
   }
 }
 

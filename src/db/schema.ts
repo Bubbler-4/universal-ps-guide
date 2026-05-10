@@ -4,6 +4,7 @@ import {
   integer,
   uniqueIndex,
   index,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -169,9 +170,48 @@ export const solutions = sqliteTable(
   ]
 );
 
+export const collections = sqliteTable(
+  "collections",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    authorId: integer("author_id")
+      .notNull()
+      .references(() => users.id),
+    title: text("title").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    deletedAt: text("deleted_at"),
+  },
+  (t) => [index("collections_author_id_idx").on(t.authorId)]
+);
+
+export const collectionProblems = sqliteTable(
+  "collection_problems",
+  {
+    collectionId: integer("collection_id")
+      .notNull()
+      .references(() => collections.id),
+    problemId: integer("problem_id")
+      .notNull()
+      .references(() => problems.id),
+    position: integer("position").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.collectionId, t.problemId] }),
+    uniqueIndex("collection_problems_collection_id_position_idx").on(t.collectionId, t.position),
+    index("collection_problems_problem_id_idx").on(t.problemId),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type Problem = typeof problems.$inferSelect;
 export type Translation = typeof translations.$inferSelect;
 export type NewTranslation = typeof translations.$inferInsert;
 export type Solution = typeof solutions.$inferSelect;
 export type NewSolution = typeof solutions.$inferInsert;
+export type Collection = typeof collections.$inferSelect;
+export type NewCollection = typeof collections.$inferInsert;
