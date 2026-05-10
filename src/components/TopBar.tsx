@@ -17,6 +17,12 @@ export default function TopBar(props: TopBarProps) {
           Universal PS Guide
         </A>
         <nav class="flex items-center gap-4 text-sm">
+          <A
+            href="/collections"
+            class="text-gray-200 hover:text-white dark:text-gray-300 dark:hover:text-gray-100 font-medium transition-colors"
+          >
+            {t("collectionsNav")}
+          </A>
           <Show
             when={props.session}
             fallback={
