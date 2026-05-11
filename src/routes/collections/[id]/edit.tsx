@@ -1,6 +1,6 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { A, cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
+import { cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { useI18n } from "~/lib/i18n";
@@ -289,7 +289,7 @@ export default function EditCollectionPage() {
                   <tr class="border-b border-gray-200 dark:border-gray-700">
                     <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
                     <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
-                    <th class="py-2 font-semibold">{t("deleteCollection")}</th>
+                    <th class="py-2 font-semibold">{t("deleteProblem")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -304,7 +304,7 @@ export default function EditCollectionPage() {
                             onClick={() => removeProblem(problem.id)}
                             class="bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                           >
-                            {t("deleteCollection")}
+                            {t("deleteProblem")}
                           </button>
                         </td>
                       </tr>
@@ -365,12 +365,7 @@ export default function EditCollectionPage() {
             >
               {submitting() ? t("savingEllipsis") : t("save")}
             </button>
-            <A
-              href={`/collections/${params.id}`}
-              class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium px-5 py-2 rounded-lg transition-colors"
-            >
-              {t("backToProblem")}
-            </A>
+
           </div>
         </div>
       </Show>

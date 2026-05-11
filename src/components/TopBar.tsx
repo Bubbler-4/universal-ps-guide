@@ -13,16 +13,18 @@ export default function TopBar(props: TopBarProps) {
   return (
     <header class="bg-gray-900 text-white shadow-md dark:bg-gray-950">
       <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
-        <A href="/" class="text-xl font-bold tracking-tight hover:text-gray-300 dark:hover:text-gray-200 transition-colors">
-          Universal PS Guide
-        </A>
-        <nav class="flex items-center gap-4 text-sm">
+        <div class="flex items-center gap-6">
+          <A href="/" class="text-xl font-bold tracking-tight hover:text-gray-300 dark:hover:text-gray-200 transition-colors">
+            Universal PS Guide
+          </A>
           <A
             href="/collections"
-            class="text-gray-200 hover:text-white dark:text-gray-300 dark:hover:text-gray-100 font-medium transition-colors"
+            class="text-base text-gray-200 hover:text-white dark:text-gray-300 dark:hover:text-gray-100 font-medium transition-colors"
           >
             {t("collectionsNav")}
           </A>
+        </div>
+        <nav class="flex items-center gap-4 text-sm">
           <Show
             when={props.session}
             fallback={
