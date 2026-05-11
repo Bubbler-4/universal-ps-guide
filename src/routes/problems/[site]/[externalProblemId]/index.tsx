@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, Show, Switch, Match, onCleanup } from "solid-js";
+import { createEffect, createSignal, For, Show, Switch, Match } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, revalidate, useParams, A } from "@solidjs/router";
 import { eq, and, isNull, asc } from "drizzle-orm";
@@ -171,6 +171,9 @@ const getProblemData = cache(
 export const route = {
   load: ({ params }: { params: { site: string; externalProblemId: string } }) =>
     getProblemData(params.site, params.externalProblemId),
+  head: ({ params }: { params: { site: string; externalProblemId: string } }) => ({
+    title: `${getSiteDisplayName(params.site) ?? params.site}/${params.externalProblemId}`,
+  }),
 };
 
 export default function ProblemPage() {
@@ -290,17 +293,6 @@ export default function ProblemPage() {
     if (idx >= translationsArr.length) {
       setSelectedIdx(0);
     }
-  });
-
-  createEffect(() => {
-    const d = data();
-    if (d?.status === "found") {
-      document.title = heading();
-    }
-  });
-
-  onCleanup(() => {
-    document.title = "Universal PS Guide";
   });
 
   return (
