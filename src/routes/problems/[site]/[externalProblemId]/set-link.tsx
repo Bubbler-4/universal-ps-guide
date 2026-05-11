@@ -6,7 +6,7 @@ import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { getDb } from "~/db";
 import { problems } from "~/db/schema";
-import { getSiteDisplayName, normalizeProblemId } from "~/lib/problems";
+import { getSiteDisplayName, normalizeProblemId, validateProblemUrl } from "~/lib/problems";
 import { useI18n } from "~/lib/i18n";
 
 type PageData =
@@ -73,7 +73,7 @@ export const route = {
 export default function SetLinkPage() {
   const params = useParams<{ site: string; externalProblemId: string }>();
   const data = createAsync(() => getSetLinkData(params.site, params.externalProblemId));
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
 
   const displayName = () => getSiteDisplayName(params.site) ?? params.site;
   const heading = () => `${displayName()}/${params.externalProblemId} - ${t("setProblemLinkSuffix")}`;
@@ -104,6 +104,15 @@ export default function SetLinkPage() {
       const url = new URL(trimmed);
       if (url.protocol !== "http:" && url.protocol !== "https:") {
         setSubmitError(t("urlMustUseHttps"));
+        return;
+      }
+      const urlError = validateProblemUrl(url, d.site, d.externalProblemId);
+      if (urlError) {
+        if (urlError.kind === "wrong_site") {
+          setSubmitError(tf("urlMustBeFromSite", { hostname: urlError.expectedHostname }));
+        } else {
+          setSubmitError(t("urlMustContainProblemId"));
+        }
         return;
       }
     } catch {

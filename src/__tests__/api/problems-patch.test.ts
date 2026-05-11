@@ -119,6 +119,46 @@ describe("PATCH /api/problems/:site/:externalProblemId", () => {
     expect(body).toHaveProperty("error");
   });
 
+  it("returns 400 when externalProblemLink hostname does not match the site", async () => {
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
+    const event = makePatchEvent("codeforces", "1700A", {
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c",
+    });
+    const res = await PATCH(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+    expect(body.error).toMatch(/codeforces\.com/i);
+  });
+
+  it("returns 400 when externalProblemLink does not contain the problem ID", async () => {
+    seedProblems(sqlite, [
+      { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
+    ]);
+    const event = makePatchEvent("codeforces", "1700A", {
+      externalProblemLink: "https://codeforces.com/problemset/problem/1800/B",
+    });
+    const res = await PATCH(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink (atcoder) does not contain the problem ID", async () => {
+    seedProblems(sqlite, [
+      { site: "atcoder", externalProblemId: "abc300_c", externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c" },
+    ]);
+    const event = makePatchEvent("atcoder", "abc300_c", {
+      externalProblemLink: "https://atcoder.jp/contests/abc100/tasks/abc100_a",
+    });
+    const res = await PATCH(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
   it("returns 400 when externalProblemLink is an empty string", async () => {
     seedProblems(sqlite, [
       { site: "codeforces", externalProblemId: "1700A", externalProblemLink: "https://codeforces.com/problemset/problem/1700/A" },
