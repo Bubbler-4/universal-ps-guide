@@ -154,6 +154,43 @@ describe("POST /api/problems/resolve", () => {
     expect(body).toHaveProperty("error");
   });
 
+  it("returns 400 when externalProblemLink hostname does not match the site", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+    expect(body.error).toMatch(/codeforces\.com/i);
+  });
+
+  it("returns 400 when externalProblemLink does not contain the problem ID", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "codeforces",
+      externalProblemId: "1700A",
+      externalProblemLink: "https://codeforces.com/problemset/problem/1800/B",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
+  it("returns 400 when externalProblemLink (atcoder) does not contain the problem ID", async () => {
+    const event = makeRequestEvent("http://localhost/api/problems/resolve", {
+      site: "atcoder",
+      externalProblemId: "abc300_c",
+      externalProblemLink: "https://atcoder.jp/contests/abc100/tasks/abc100_a",
+    });
+    const res = await POST(event as APIEvent);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty("error");
+  });
+
   it("creates a new problem and returns it with status 200", async () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "codeforces",
@@ -186,7 +223,8 @@ describe("POST /api/problems/resolve", () => {
     const event = makeRequestEvent("http://localhost/api/problems/resolve", {
       site: "atcoder",
       externalProblemId: "abc300_c",
-      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
+      // Use an alternative valid URL that still contains "abc300_c" as a path fragment.
+      externalProblemLink: "https://atcoder.jp/contests/abc300_extra/tasks/abc300_c",
     });
     const res = await POST(event as APIEvent);
     expect(res.status).toBe(200);
@@ -195,7 +233,7 @@ describe("POST /api/problems/resolve", () => {
     expect(body.problem).toMatchObject({
       site: "atcoder",
       externalProblemId: "abc300_c",
-      externalProblemLink: "https://atcoder.jp/contests/abc300/tasks/abc300_c_new",
+      externalProblemLink: "https://atcoder.jp/contests/abc300_extra/tasks/abc300_c",
     });
 
     // Only one row should exist
@@ -210,7 +248,7 @@ describe("POST /api/problems/resolve", () => {
     const row = sqlite
       .prepare("SELECT external_problem_link FROM problems WHERE id = 42")
       .get() as { external_problem_link: string };
-    expect(row.external_problem_link).toBe("https://atcoder.jp/contests/abc300/tasks/abc300_c_new");
+    expect(row.external_problem_link).toBe("https://atcoder.jp/contests/abc300_extra/tasks/abc300_c");
   });
 
   it("trims whitespace from site, externalProblemId and externalProblemLink", async () => {
