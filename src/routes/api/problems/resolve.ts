@@ -1,6 +1,7 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { problems } from "~/db/schema";
 import { getD1 } from "~/server/db";
+import { validateProblemUrl } from "~/lib/problems";
 
 /**
  * POST /api/problems/resolve
@@ -66,6 +67,18 @@ export async function POST(event: APIEvent) {
       JSON.stringify({ error: "externalProblemLink must use http or https" }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
+  }
+
+  const urlError = validateProblemUrl(parsedUrl, trimmedSite, trimmedId);
+  if (urlError) {
+    const message =
+      urlError.kind === "wrong_site"
+        ? `externalProblemLink must be from ${urlError.expectedHostname}`
+        : "externalProblemLink must contain the problem ID as a path segment";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const db = getD1(event);

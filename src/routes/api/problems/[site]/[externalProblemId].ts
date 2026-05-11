@@ -5,6 +5,7 @@ import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { MAX_VISIBLE_SOLUTIONS } from "~/lib/solutions";
+import { validateProblemUrl } from "~/lib/problems";
 
 /**
  * GET /api/problems/:site/:externalProblemId
@@ -136,6 +137,18 @@ export async function PATCH(event: APIEvent) {
       JSON.stringify({ error: "externalProblemLink must use http or https" }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
+  }
+
+  const urlError = validateProblemUrl(parsedUrl, site, externalProblemId);
+  if (urlError) {
+    const message =
+      urlError.kind === "wrong_site"
+        ? `externalProblemLink must be from ${urlError.expectedHostname}`
+        : "externalProblemLink must contain the problem ID as a path segment";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const db = getD1(event);
