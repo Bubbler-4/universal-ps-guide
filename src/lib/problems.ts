@@ -81,6 +81,11 @@ export function validateProblemUrl(
       if (i + 1 < fragments.length) {
         if (normalizeProblemId(fragment + fragments[i + 1]) === normalizedId) return true;
       }
+      // Also check combining fragment with the next non-separator fragment
+      // when "problem" is between them (e.g., /contest/1700/problem/A).
+      if (i + 2 < fragments.length && fragments[i + 1] === "problem") {
+        if (normalizeProblemId(fragment + fragments[i + 2]) === normalizedId) return true;
+      }
       return false;
     });
     if (!hasMatch) {
