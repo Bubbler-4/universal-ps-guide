@@ -3,7 +3,7 @@ import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
-import { reorderItems } from "~/lib/collections";
+import { moveItemDown, moveItemUp, reorderItems } from "~/lib/collections";
 import { useI18n } from "~/lib/i18n";
 import { SITES, normalizeProblemId } from "~/lib/problems";
 import { getDb } from "~/db";
@@ -159,6 +159,20 @@ export default function EditCollectionPage() {
     });
   };
 
+  const moveProblemUp = (problemId: number) => {
+    setSelectedProblems((prev) => {
+      const index = prev.findIndex((problem) => problem.id === problemId);
+      return moveItemUp(prev, index);
+    });
+  };
+
+  const moveProblemDown = (problemId: number) => {
+    setSelectedProblems((prev) => {
+      const index = prev.findIndex((problem) => problem.id === problemId);
+      return moveItemDown(prev, index);
+    });
+  };
+
   const addProblem = async () => {
     const normalizedId = normalizeProblemId(problemId());
     if (!normalizedId) {
@@ -304,6 +318,14 @@ export default function EditCollectionPage() {
                 <thead>
                   <tr class="border-b border-gray-200 dark:border-gray-700">
                     <th class="py-2 pr-3 font-semibold">{t("reorder")}</th>
+                    <th class="py-2 pr-3 font-semibold text-center">
+                      <span class="sr-only">{t("moveUp")}</span>
+                      <span aria-hidden="true">↑</span>
+                    </th>
+                    <th class="py-2 pr-3 font-semibold text-center">
+                      <span class="sr-only">{t("moveDown")}</span>
+                      <span aria-hidden="true">↓</span>
+                    </th>
                     <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
                     <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
                     <th class="py-2 font-semibold">{t("deleteProblem")}</th>
@@ -311,7 +333,7 @@ export default function EditCollectionPage() {
                 </thead>
                 <tbody>
                   <For each={selectedProblems()}>
-                    {(problem) => (
+                    {(problem, index) => (
                       <tr
                         draggable={selectedProblems().length > 1}
                         onDragStart={(event) => {
@@ -349,6 +371,28 @@ export default function EditCollectionPage() {
                         <td class="py-2 pr-3 text-gray-400 dark:text-gray-500 select-none" aria-label={t("dragToReorderProblems")}>
                           <span aria-hidden="true">⋮⋮</span>
                         </td>
+                        <td class="py-2 pr-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => moveProblemUp(problem.id)}
+                            disabled={index() === 0}
+                            aria-label={t("moveUp")}
+                            class="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <span aria-hidden="true">↑</span>
+                          </button>
+                        </td>
+                        <td class="py-2 pr-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => moveProblemDown(problem.id)}
+                            disabled={index() === selectedProblems().length - 1}
+                            aria-label={t("moveDown")}
+                            class="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <span aria-hidden="true">↓</span>
+                          </button>
+                        </td>
                         <td class="py-2 pr-3">{problem.site}</td>
                         <td class="py-2 pr-3">{problem.externalProblemId}</td>
                         <td class="py-2">
@@ -365,7 +409,7 @@ export default function EditCollectionPage() {
                   </For>
                   {selectedProblems().length === 0 && (
                     <tr>
-                      <td colSpan={4} class="py-3 text-gray-500 dark:text-gray-400">
+                      <td colSpan={6} class="py-3 text-gray-500 dark:text-gray-400">
                         {t("noProblemsYet")}
                       </td>
                     </tr>

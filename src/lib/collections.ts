@@ -14,3 +14,11 @@ export function reorderItems<T>(items: T[], fromIndex: number, toIndex: number):
   reordered.splice(toIndex, 0, movedItem!);
   return reordered;
 }
+
+export function moveItemUp<T>(items: T[], index: number): T[] {
+  return reorderItems(items, index, index - 1);
+}
+
+export function moveItemDown<T>(items: T[], index: number): T[] {
+  return reorderItems(items, index, index + 1);
+}
