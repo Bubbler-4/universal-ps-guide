@@ -2,6 +2,7 @@ import { createSignal, For, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { A, cache, createAsync, redirect, useNavigate } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
+import { reorderItems } from "~/lib/collections";
 import { useI18n } from "~/lib/i18n";
 import { SITES, normalizeProblemId } from "~/lib/problems";
 import { getCloudflareEnv } from "~/server/env";
@@ -50,12 +51,26 @@ export default function AddCollectionPage() {
   const [site, setSite] = createSignal(SITES[0].toLowerCase());
   const [problemId, setProblemId] = createSignal("");
   const [selectedProblems, setSelectedProblems] = createSignal<SelectedProblem[]>([]);
+  const [draggedProblemId, setDraggedProblemId] = createSignal<number | null>(null);
   const [addingProblem, setAddingProblem] = createSignal(false);
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
   const removeProblem = (id: number) => {
     setSelectedProblems((prev) => prev.filter((problem) => problem.id !== id));
+  };
+
+  const reorderProblems = (sourceProblemId: number, targetProblemId: number) => {
+    if (sourceProblemId === targetProblemId) {
+      return;
+    }
+
+    setSelectedProblems((prev) => {
+      const sourceIndex = prev.findIndex((problem) => problem.id === sourceProblemId);
+      const targetIndex = prev.findIndex((problem) => problem.id === targetProblemId);
+
+      return reorderItems(prev, sourceIndex, targetIndex);
+    });
   };
 
   const addProblem = async () => {
@@ -183,10 +198,12 @@ export default function AddCollectionPage() {
 
         <div>
           <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">{t("currentProblems")}</h2>
+          <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">{t("dragToReorderProblems")}</p>
           <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl shadow-sm dark:shadow-none border border-gray-200 dark:border-gray-700 p-4">
             <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
               <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="py-2 pr-3 font-semibold">{t("reorder")}</th>
                   <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
                   <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
                   <th class="py-2 font-semibold">{t("deleteCollection")}</th>
@@ -195,7 +212,43 @@ export default function AddCollectionPage() {
               <tbody>
                 <For each={selectedProblems()}>
                   {(problem) => (
-                    <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <tr
+                      draggable={selectedProblems().length > 1}
+                      onDragStart={(event) => {
+                        setDraggedProblemId(problem.id);
+                        event.dataTransfer?.setData("text/plain", String(problem.id));
+                        if (event.dataTransfer) {
+                          event.dataTransfer.effectAllowed = "move";
+                        }
+                      }}
+                      onDragOver={(event) => {
+                        if (draggedProblemId() === null || draggedProblemId() === problem.id) {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        if (event.dataTransfer) {
+                          event.dataTransfer.dropEffect = "move";
+                        }
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const sourceProblemId = draggedProblemId();
+                        setDraggedProblemId(null);
+                        if (sourceProblemId !== null) {
+                          reorderProblems(sourceProblemId, problem.id);
+                        }
+                      }}
+                      onDragEnd={() => setDraggedProblemId(null)}
+                      class="border-b border-gray-100 dark:border-gray-800 last:border-0"
+                      classList={{
+                        "opacity-50": draggedProblemId() === problem.id,
+                        "cursor-grab active:cursor-grabbing": selectedProblems().length > 1,
+                      }}
+                    >
+                      <td class="py-2 pr-3 text-gray-400 dark:text-gray-500 select-none" aria-label={t("dragToReorderProblems")}>
+                        <span aria-hidden="true">⋮⋮</span>
+                      </td>
                       <td class="py-2 pr-3">{problem.site}</td>
                       <td class="py-2 pr-3">{problem.externalProblemId}</td>
                       <td class="py-2">
@@ -212,7 +265,7 @@ export default function AddCollectionPage() {
                 </For>
                 {selectedProblems().length === 0 && (
                   <tr>
-                    <td colSpan={3} class="py-3 text-gray-500 dark:text-gray-400">
+                    <td colSpan={4} class="py-3 text-gray-500 dark:text-gray-400">
                       {t("noProblemsYet")}
                     </td>
                   </tr>
