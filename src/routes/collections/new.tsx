@@ -228,7 +228,7 @@ export default function AddCollectionPage() {
                   </th>
                   <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
                   <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
-                  <th class="py-2 font-semibold">{t("deleteCollection")}</th>
+                  <th class="py-2 font-semibold">{t("deleteProblem")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,7 +301,7 @@ export default function AddCollectionPage() {
                           onClick={() => removeProblem(problem.id)}
                           class="bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 text-sm font-medium px-3 py-1 rounded-lg transition-colors"
                         >
-                          {t("deleteCollection")}
+                          {t("deleteProblem")}
                         </button>
                       </td>
                     </tr>
