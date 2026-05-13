@@ -23,6 +23,12 @@ export default function TopBar(props: TopBarProps) {
           >
             {t("collectionsNav")}
           </A>
+          <A
+            href="/faq"
+            class="text-base text-gray-200 hover:text-white dark:text-gray-300 dark:hover:text-gray-100 font-medium transition-colors"
+          >
+            {t("faqNav")}
+          </A>
         </div>
         <nav class="flex items-center gap-4 text-sm">
           <Show
