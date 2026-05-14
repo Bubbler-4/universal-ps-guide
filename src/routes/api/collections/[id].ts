@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-import { MAX_COLLECTION_PROBLEMS, parseProblemIds } from "./validation";
+import { MAX_COLLECTION_PROBLEMS, parseCollectionProblems, parseProblemIds } from "./validation";
 
 /**
  * GET /api/collections/:id
@@ -49,6 +49,7 @@ export async function GET(event: APIEvent) {
       site: problems.site,
       externalProblemId: problems.externalProblemId,
       externalProblemLink: problems.externalProblemLink,
+      shortDescription: collectionProblems.shortDescription,
     })
     .from(collectionProblems)
     .innerJoin(problems, eq(problems.id, collectionProblems.problemId))
@@ -66,7 +67,7 @@ export async function GET(event: APIEvent) {
 
 /**
  * PUT /api/collections/:id
- * Body: { title: string, problemIds: number[] }
+ * Body: { title: string, problemIds: number[] } or { title: string, problems: { id: number, shortDescription?: string }[] }
  * Replaces the collection title and problem list.
  */
 export async function PUT(event: APIEvent) {
@@ -95,7 +96,7 @@ export async function PUT(event: APIEvent) {
     });
   }
 
-  const { title, problemIds: rawProblemIds } = body as Record<string, unknown>;
+  const { title, problemIds: rawProblemIds, problems: rawProblems } = body as Record<string, unknown>;
   if (typeof title !== "string" || !title.trim()) {
     return new Response(JSON.stringify({ error: "title must be a non-empty string" }), {
       status: 400,
@@ -103,22 +104,40 @@ export async function PUT(event: APIEvent) {
     });
   }
 
-  const parsedProblemIds = parseProblemIds(rawProblemIds);
-  if (!parsedProblemIds.valid) {
-    return new Response(JSON.stringify({ error: "problemIds must be an array of positive integers" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+  const parsedProblems =
+    rawProblems !== undefined
+      ? parseCollectionProblems(rawProblems)
+      : (() => {
+          const parsedProblemIds = parseProblemIds(rawProblemIds);
+          if (!parsedProblemIds.valid) {
+            return { valid: false } as const;
+          }
+          return {
+            valid: true as const,
+            problems: parsedProblemIds.problemIds.map((id) => ({ id, shortDescription: null })),
+          };
+        })();
+  if (!parsedProblems.valid) {
+    return new Response(
+      JSON.stringify({
+        error: "Provide problems as an array of { id, shortDescription? } or problemIds as an array of positive integers",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
-  const problemIds = parsedProblemIds.problemIds;
-  if (problemIds.length > MAX_COLLECTION_PROBLEMS) {
+  const collectionProblemData = parsedProblems.problems;
+  if (collectionProblemData.length > MAX_COLLECTION_PROBLEMS) {
     return new Response(
       JSON.stringify({ error: `A collection can include at most ${MAX_COLLECTION_PROBLEMS} problems` }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
+  const problemIds = collectionProblemData.map((problem) => problem.id);
   const uniqueProblemIds = Array.from(new Set(problemIds));
   if (uniqueProblemIds.length !== problemIds.length) {
     return new Response(JSON.stringify({ error: "problemIds must not contain duplicates" }), {
@@ -172,10 +191,11 @@ export async function PUT(event: APIEvent) {
     ...(problemIds.length > 0
       ? [
           db.insert(collectionProblems).values(
-            problemIds.map((problemId, index) => ({
+            collectionProblemData.map((problem, index) => ({
               collectionId: id,
-              problemId,
+              problemId: problem.id,
               position: index,
+              shortDescription: problem.shortDescription,
             }))
           ),
         ]
