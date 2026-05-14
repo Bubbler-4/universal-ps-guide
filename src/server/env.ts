@@ -5,7 +5,6 @@ declare global {
   // renderer is invoked. Used as the authoritative source of Cloudflare env
   // bindings when event.nativeEvent.context is unavailable or unreliable
   // (e.g. when the SolidStart handler is invoked indirectly via handler wrapping).
-  // eslint-disable-next-line no-var
   var __env__: CloudflareEnv | undefined;
 }
 
