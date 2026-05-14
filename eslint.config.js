@@ -1,7 +1,9 @@
 import tseslint from "typescript-eslint";
-import solid from "eslint-plugin-solid/configs/typescript";
 
 export default tseslint.config(...tseslint.configs.recommended, {
   files: ["**/*.{ts,tsx}"],
-  ...solid,
+  rules: {
+    // SolidJS uses `ref` prop to assign variables without reassignment in code
+    "@typescript-eslint/no-unused-vars": "off",
+  },
 });
