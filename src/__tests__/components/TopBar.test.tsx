@@ -38,24 +38,29 @@ describe("TopBar", () => {
     document.body.appendChild(container);
 
     const dispose = render(() => <TopBar session={null} />, container);
-    const mobileMenuButton = Array.from(container.querySelectorAll("button")).find(
-      button => button.textContent === "Menu",
-    );
+    try {
+      const mobileMenuButton = Array.from(container.querySelectorAll("button")).find(
+        button => button.textContent === "Menu",
+      );
 
-    expect(mobileMenuButton).toBeTruthy();
-    expect(container.querySelector("#mobile-topbar-menu")).toBeNull();
+      expect(mobileMenuButton).toBeTruthy();
+      expect(mobileMenuButton?.getAttribute("aria-expanded")).toBe("false");
+      expect(container.querySelector("#mobile-topbar-menu")).toBeNull();
 
-    mobileMenuButton?.click();
+      mobileMenuButton?.click();
+      expect(mobileMenuButton?.getAttribute("aria-expanded")).toBe("true");
 
-    const mobileMenu = container.querySelector("#mobile-topbar-menu");
+      const mobileMenu = container.querySelector("#mobile-topbar-menu");
 
-    expect(mobileMenu?.textContent).toContain("Collections");
-    expect(mobileMenu?.textContent).toContain("FAQ");
+      expect(mobileMenu?.textContent).toContain("Collections");
+      expect(mobileMenu?.textContent).toContain("FAQ");
 
-    mobileMenuButton?.click();
-    expect(container.querySelector("#mobile-topbar-menu")).toBeNull();
-
-    dispose();
-    container.remove();
+      mobileMenuButton?.click();
+      expect(mobileMenuButton?.getAttribute("aria-expanded")).toBe("false");
+      expect(container.querySelector("#mobile-topbar-menu")).toBeNull();
+    } finally {
+      dispose();
+      container.remove();
+    }
   });
 });
