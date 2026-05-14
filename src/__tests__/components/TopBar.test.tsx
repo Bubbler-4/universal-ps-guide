@@ -39,15 +39,19 @@ describe("TopBar", () => {
 
     const dispose = render(() => <TopBar session={null} />, container);
     try {
-      const mobileMenuButton = Array.from(container.querySelectorAll("button")).find(
-        button => button.textContent === "Menu",
-      );
+      const mobileMenuButton = container.querySelector<HTMLButtonElement>('button[aria-controls="mobile-topbar-menu"]');
+      const homeLink = container.querySelector<HTMLAnchorElement>('a[href="/"]');
 
       expect(mobileMenuButton).toBeTruthy();
+      expect(homeLink).toBeTruthy();
+      expect(mobileMenuButton?.compareDocumentPosition(homeLink as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(mobileMenuButton?.getAttribute("aria-label")).toBe("Menu");
+      expect(mobileMenuButton?.textContent?.trim()).toBe("");
       expect(mobileMenuButton?.getAttribute("aria-expanded")).toBe("false");
       expect(container.querySelector("#mobile-topbar-menu")).toBeNull();
 
       mobileMenuButton?.click();
+      expect(mobileMenuButton?.getAttribute("aria-label")).toBe("Close");
       expect(mobileMenuButton?.getAttribute("aria-expanded")).toBe("true");
 
       const mobileMenu = container.querySelector("#mobile-topbar-menu");
