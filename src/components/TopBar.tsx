@@ -16,6 +16,30 @@ export default function TopBar(props: TopBarProps) {
       <div class="mx-auto max-w-5xl px-4 py-3">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(open => !open)}
+              class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-700 text-white transition-colors hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 sm:hidden"
+              aria-controls="mobile-topbar-menu"
+              aria-expanded={mobileMenuOpen()}
+              aria-label={mobileMenuOpen() ? t("hideMenu") : t("showMenu")}
+            >
+              <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                <Show
+                  when={mobileMenuOpen()}
+                  fallback={
+                    <>
+                      <path d="M3 5h14" stroke-linecap="round" />
+                      <path d="M3 10h14" stroke-linecap="round" />
+                      <path d="M3 15h14" stroke-linecap="round" />
+                    </>
+                  }
+                >
+                  <path d="M5 5l10 10" stroke-linecap="round" />
+                  <path d="M15 5L5 15" stroke-linecap="round" />
+                </Show>
+              </svg>
+            </button>
             <A
               href="/"
               class="text-xl font-bold tracking-tight hover:text-gray-300 dark:hover:text-gray-200 transition-colors"
@@ -38,15 +62,6 @@ export default function TopBar(props: TopBarProps) {
             </nav>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(open => !open)}
-              class="rounded-md bg-gray-700 px-3 py-2 font-medium text-white transition-colors hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 sm:hidden"
-              aria-controls="mobile-topbar-menu"
-              aria-expanded={mobileMenuOpen()}
-            >
-              {mobileMenuOpen() ? t("hideMenu") : t("showMenu")}
-            </button>
             <nav class="flex items-center gap-2 text-sm sm:gap-4">
               <Show
                 when={props.session}
