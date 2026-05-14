@@ -1,6 +1,7 @@
 import { createSignal, For } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useNavigate } from "@solidjs/router";
+import { cookieStorage, makePersisted } from "@solid-primitives/storage";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
 import { SITES, normalizeProblemId } from "~/lib/problems";
@@ -27,6 +28,9 @@ type HomeData = {
     authorUsername: string | null;
   }[];
 };
+
+const DEFAULT_SITE = SITES[0].toLowerCase();
+const SITE_KEYS = new Set(SITES.map((site) => site.toLowerCase()));
 
 const checkSession = cache(async () => {
   "use server";
@@ -145,7 +149,12 @@ export default function Home() {
   createAsync(() => checkSession());
   const homeData = createAsync(() => getHomeData());
   const navigate = useNavigate();
-  const [site, setSite] = createSignal(SITES[0].toLowerCase());
+  const [site, setSite] = makePersisted(createSignal(DEFAULT_SITE), {
+    name: "site",
+    storage: cookieStorage.withOptions({ path: "/", sameSite: "Lax", maxAge: 60 * 60 * 24 * 365 }),
+    serialize: (value: string) => value,
+    deserialize: (value: string) => (SITE_KEYS.has(value) ? value : DEFAULT_SITE),
+  });
   const [problemId, setProblemId] = createSignal("");
   const { t } = useI18n();
   const problemHref = (site: string, externalProblemId: string) =>
