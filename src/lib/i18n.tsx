@@ -13,6 +13,8 @@ const translations = {
     finishSetup: "Finish setup",
     switchToKorean: "Switch to Korean",
     switchToEnglish: "Switch to English",
+    showMenu: "Menu",
+    hideMenu: "Close",
     collectionsNav: "Collections",
     faqNav: "FAQ",
     // Collections pages
@@ -182,6 +184,8 @@ const translations = {
     finishSetup: "설정 완료하기",
     switchToKorean: "한국어로 전환",
     switchToEnglish: "영어로 전환",
+    showMenu: "메뉴",
+    hideMenu: "닫기",
     collectionsNav: "문제집",
     faqNav: "FAQ",
     // Collections pages
