@@ -14,6 +14,7 @@ const translations = {
     switchToKorean: "Switch to Korean",
     switchToEnglish: "Switch to English",
     collectionsNav: "Collections",
+    faqNav: "FAQ",
     // Collections pages
     collectionId: "Collection ID",
     collectionName: "Collection Name",
@@ -182,6 +183,7 @@ const translations = {
     switchToKorean: "한국어로 전환",
     switchToEnglish: "영어로 전환",
     collectionsNav: "문제집",
+    faqNav: "FAQ",
     // Collections pages
     collectionId: "문제집 ID",
     collectionName: "문제집 이름",
