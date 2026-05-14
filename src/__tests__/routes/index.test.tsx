@@ -50,4 +50,22 @@ describe("home page site selector", () => {
       document.cookie = "site=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
     }
   });
+
+  it("falls back to default when cookie has an unknown site", () => {
+    document.cookie = "site=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    document.cookie = "site=unknown-site; path=/";
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const dispose = render(() => <Home />, container);
+    try {
+      const siteSelect = container.querySelector<HTMLSelectElement>("#site-select");
+      if (!siteSelect) throw new Error("site-select not found");
+      expect(siteSelect.value).toBe(siteSelect.options[0]?.value);
+    } finally {
+      dispose();
+      container.remove();
+      document.cookie = "site=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    }
+  });
 });
