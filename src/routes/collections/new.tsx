@@ -53,6 +53,7 @@ export default function AddCollectionPage() {
   const [problemId, setProblemId] = createSignal("");
   const [selectedProblems, setSelectedProblems] = createSignal<SelectedProblem[]>([]);
   const [draggedProblemId, setDraggedProblemId] = createSignal<number | null>(null);
+  let dragTargetProblemIdRef: number | null = null;
   const [addingProblem, setAddingProblem] = createSignal(false);
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
@@ -249,29 +250,7 @@ export default function AddCollectionPage() {
                 <For each={selectedProblems()}>
                   {(problem, index) => (
                     <tr
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        if (event.dataTransfer && draggedProblemId() !== null) {
-                          event.dataTransfer.dropEffect = "move";
-                        }
-                      }}
-                      onDragEnter={(event) => {
-                        const sourceProblemId = draggedProblemId();
-                        if (sourceProblemId === null || sourceProblemId === problem.id) {
-                          return;
-                        }
-
-                        event.preventDefault();
-                        reorderProblems(sourceProblemId, problem.id);
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const sourceProblemId = draggedProblemId();
-                        setDraggedProblemId(null);
-                        if (sourceProblemId !== null) {
-                          reorderProblems(sourceProblemId, problem.id);
-                        }
-                      }}
+                      data-problem-id={String(problem.id)}
                       class="border-b border-gray-100 dark:border-gray-800 last:border-0"
                       classList={{
                         "opacity-50": draggedProblemId() === problem.id,
@@ -280,26 +259,39 @@ export default function AddCollectionPage() {
                       <td class="py-2 pr-3 text-gray-400 dark:text-gray-500 select-none">
                         <button
                           type="button"
-                          draggable={selectedProblems().length > 1}
-                          onDragStart={(event) => {
-                            setDraggedProblemId(problem.id);
-                            if (event.dataTransfer) {
-                              event.dataTransfer.setData("text/plain", String(problem.id));
-                              event.dataTransfer.effectAllowed = "move";
-                              const row = event.currentTarget.closest("tr");
-                              if (row) {
-                                const rowRect = row.getBoundingClientRect();
-                                event.dataTransfer.setDragImage(
-                                  row,
-                                  event.clientX - rowRect.left,
-                                  event.clientY - rowRect.top
-                                );
-                              }
+                          onPointerDown={(event) => {
+                            if (!event.isPrimary || event.button !== 0) return;
+                            if (selectedProblems().length <= 1) return;
+                            try {
+                              event.currentTarget.setPointerCapture(event.pointerId);
+                            } catch {
+                              // setPointerCapture may not be available in all environments
                             }
+                            dragTargetProblemIdRef = null;
+                            setDraggedProblemId(problem.id);
                           }}
-                          onDragEnd={() => setDraggedProblemId(null)}
+                          onPointerMove={(event) => {
+                            if (!event.isPrimary || (event.buttons & 1) === 0) return;
+                            if (draggedProblemId() !== problem.id) return;
+                            const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
+                            const rowBelow = elementBelow?.closest<HTMLElement>("[data-problem-id]");
+                            if (!rowBelow) return;
+                            const targetProblemId = Number(rowBelow.dataset.problemId);
+                            if (!targetProblemId || targetProblemId === problem.id) return;
+                            if (targetProblemId === dragTargetProblemIdRef) return;
+                            dragTargetProblemIdRef = targetProblemId;
+                            reorderProblems(problem.id, targetProblemId);
+                          }}
+                          onPointerUp={() => {
+                            dragTargetProblemIdRef = null;
+                            setDraggedProblemId(null);
+                          }}
+                          onPointerCancel={() => {
+                            dragTargetProblemIdRef = null;
+                            setDraggedProblemId(null);
+                          }}
                           aria-label={t("dragToReorderProblems")}
-                          class="inline-flex"
+                          class="inline-flex touch-none"
                           classList={{
                             "cursor-grab": selectedProblems().length > 1,
                             "active:cursor-grabbing": selectedProblems().length > 1,
