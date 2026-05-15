@@ -3,7 +3,7 @@ import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
-import { moveItemDown, moveItemUp, reorderItems } from "~/lib/collections";
+import { moveItemDown, moveItemUp, reorderItems, updateItemById } from "~/lib/collections";
 import { useI18n } from "~/lib/i18n";
 import { SITES, normalizeProblemId } from "~/lib/problems";
 import { getDb } from "~/db";
@@ -150,7 +150,9 @@ export default function EditCollectionPage() {
 
   const updateProblemShortDescription = (id: number, shortDescription: string) => {
     setSelectedProblems((prev) =>
-      prev.map((problem) => (problem.id === id ? { ...problem, shortDescription } : problem))
+      updateItemById(prev, id, (problem) => {
+        problem.shortDescription = shortDescription;
+      })
     );
   };
 
