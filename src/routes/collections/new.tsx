@@ -287,7 +287,8 @@ export default function AddCollectionPage() {
                           aria-label={t("dragToReorderProblems")}
                           class="inline-flex"
                           classList={{
-                            "cursor-grab active:cursor-grabbing": selectedProblems().length > 1,
+                            "cursor-grab": selectedProblems().length > 1,
+                            "active:cursor-grabbing": selectedProblems().length > 1,
                           }}
                         >
                           <span aria-hidden="true">⋮⋮</span>
