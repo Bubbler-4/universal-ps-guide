@@ -132,7 +132,6 @@ export default function EditCollectionPage() {
   const [selectedProblems, setSelectedProblems] = createSignal<SelectedProblem[]>([]);
   const [draggedProblemId, setDraggedProblemId] = createSignal<number | null>(null);
   const [initializedCollectionId, setInitializedCollectionId] = createSignal<number | null>(null);
-  const [addingProblem, setAddingProblem] = createSignal(false);
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
@@ -191,7 +190,6 @@ export default function EditCollectionPage() {
       return;
     }
 
-    setAddingProblem(true);
     setError(null);
     try {
       const res = await fetch(`/api/problems/${site()}/${encodeURIComponent(normalizedId)}`);
@@ -236,8 +234,6 @@ export default function EditCollectionPage() {
       setProblemId("");
     } catch {
       setError(t("networkError"));
-    } finally {
-      setAddingProblem(false);
     }
   };
 
@@ -487,14 +483,6 @@ export default function EditCollectionPage() {
                 mode="collection"
                 onAdd={(id) => addProblem(id)}
               />
-              <button
-                type="button"
-                onClick={() => addProblem()}
-                disabled={addingProblem()}
-                class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
-              >
-                {addingProblem() ? t("savingEllipsis") : t("addProblem")}
-              </button>
             </div>
           </div>
 

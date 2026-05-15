@@ -4,6 +4,18 @@ import { describe, expect, it, vi } from "vitest";
 import { render } from "solid-js/web";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const clickSuggestionRow = async (container: HTMLDivElement, problemId: string) => {
+  await wait(250);
+  await flush();
+  const problemLabel = Array.from(container.querySelectorAll("span")).find(
+    (span) => span.textContent?.trim() === problemId,
+  );
+  const suggestionRow = problemLabel?.closest("div");
+  if (!suggestionRow) throw new Error(`suggestion row not found for ${problemId}`);
+  suggestionRow.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await flush();
+};
 const getProblemIdsInOrder = (container: HTMLDivElement) =>
   Array.from(container.querySelectorAll("tbody tr"))
     .map((row) => row.querySelectorAll("td")[4]?.textContent?.trim() ?? "")
@@ -45,20 +57,22 @@ describe("collection problem row drag handle", () => {
       }),
     }));
 
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          problem: { id: 1, site: "BOJ", externalProblemId: "1000" },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          problem: { id: 2, site: "BOJ", externalProblemId: "1001" },
-        }),
-      });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/problems/search?") && url.includes("prefix=1000")) {
+        return { ok: true, json: async () => ({ matches: ["1000"], hasExactMatch: true }) };
+      }
+      if (url.includes("/api/problems/search?") && url.includes("prefix=1001")) {
+        return { ok: true, json: async () => ({ matches: ["1001"], hasExactMatch: true }) };
+      }
+      if (url.includes("/api/problems/") && url.includes("/1000")) {
+        return { ok: true, json: async () => ({ problem: { id: 1, site: "BOJ", externalProblemId: "1000" } }) };
+      }
+      if (url.includes("/api/problems/") && url.includes("/1001")) {
+        return { ok: true, json: async () => ({ problem: { id: 2, site: "BOJ", externalProblemId: "1001" } }) };
+      }
+      throw new Error(`unexpected fetch URL: ${url}`);
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const { default: AddCollectionPage } = await import("~/routes/collections/new");
@@ -74,19 +88,10 @@ describe("collection problem row drag handle", () => {
       problemIdInput.value = "1000";
       problemIdInput.dispatchEvent(new Event("input", { bubbles: true }));
 
-      const addButton = Array.from(container.querySelectorAll("button")).find(
-        (button) => button.textContent?.trim() === "addProblem",
-      );
-      if (!addButton) throw new Error("add problem button not found");
-
-      addButton.click();
-      await flush();
-      await flush();
+      await clickSuggestionRow(container, "1000");
       problemIdInput.value = "1001";
       problemIdInput.dispatchEvent(new Event("input", { bubbles: true }));
-      addButton.click();
-      await flush();
-      await flush();
+      await clickSuggestionRow(container, "1001");
 
       const dragHandle = container.querySelector<HTMLButtonElement>('button[aria-label="dragToReorderProblems"]');
       if (!dragHandle) throw new Error("drag handle not found");
@@ -170,20 +175,22 @@ describe("collection problem row drag handle", () => {
       }),
     }));
 
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          problem: { id: 1, site: "BOJ", externalProblemId: "1000" },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          problem: { id: 2, site: "BOJ", externalProblemId: "1001" },
-        }),
-      });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/problems/search?") && url.includes("prefix=1000")) {
+        return { ok: true, json: async () => ({ matches: ["1000"], hasExactMatch: true }) };
+      }
+      if (url.includes("/api/problems/search?") && url.includes("prefix=1001")) {
+        return { ok: true, json: async () => ({ matches: ["1001"], hasExactMatch: true }) };
+      }
+      if (url.includes("/api/problems/") && url.includes("/1000")) {
+        return { ok: true, json: async () => ({ problem: { id: 1, site: "BOJ", externalProblemId: "1000" } }) };
+      }
+      if (url.includes("/api/problems/") && url.includes("/1001")) {
+        return { ok: true, json: async () => ({ problem: { id: 2, site: "BOJ", externalProblemId: "1001" } }) };
+      }
+      throw new Error(`unexpected fetch URL: ${url}`);
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const { default: AddCollectionPage } = await import("~/routes/collections/new");
@@ -199,20 +206,11 @@ describe("collection problem row drag handle", () => {
       problemIdInput.value = "1000";
       problemIdInput.dispatchEvent(new Event("input", { bubbles: true }));
 
-      const addButton = Array.from(container.querySelectorAll("button")).find(
-        (button) => button.textContent?.trim() === "addProblem",
-      );
-      if (!addButton) throw new Error("add problem button not found");
-
-      addButton.click();
-      await flush();
-      await flush();
+      await clickSuggestionRow(container, "1000");
       await waitForDragHandles(container, 1);
       problemIdInput.value = "1001";
       problemIdInput.dispatchEvent(new Event("input", { bubbles: true }));
-      addButton.click();
-      await flush();
-      await flush();
+      await clickSuggestionRow(container, "1001");
 
       const dragHandles = await waitForDragHandles(container, 2);
 
