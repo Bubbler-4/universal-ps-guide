@@ -8,6 +8,18 @@ const getProblemIdsInOrder = (container: HTMLDivElement) =>
   Array.from(container.querySelectorAll("tbody tr"))
     .map((row) => row.querySelectorAll("td")[4]?.textContent?.trim() ?? "")
     .filter((value) => value.length > 0);
+const waitForDragHandles = async (container: HTMLDivElement, expectedCount: number) => {
+  for (let i = 0; i < 50; i += 1) {
+    const handles = Array.from(
+      container.querySelectorAll<HTMLButtonElement>('button[aria-label="dragToReorderProblems"]'),
+    );
+    if (handles.length >= expectedCount) {
+      return handles;
+    }
+    await flush();
+  }
+  throw new Error("drag handles not found");
+};
 
 describe("collection problem row drag handle", () => {
   it("only makes the dedicated handle draggable on the new collection page", async () => {
@@ -191,16 +203,14 @@ describe("collection problem row drag handle", () => {
       addButton.click();
       await flush();
       await flush();
+      await waitForDragHandles(container, 1);
       problemIdInput.value = "1001";
       problemIdInput.dispatchEvent(new Event("input", { bubbles: true }));
       addButton.click();
       await flush();
       await flush();
 
-      const dragHandles = Array.from(
-        container.querySelectorAll<HTMLButtonElement>('button[aria-label="dragToReorderProblems"]'),
-      );
-      if (dragHandles.length < 2) throw new Error("drag handles not found");
+      const dragHandles = await waitForDragHandles(container, 2);
 
       expect(getProblemIdsInOrder(container)).toEqual(["1000", "1001"]);
 
