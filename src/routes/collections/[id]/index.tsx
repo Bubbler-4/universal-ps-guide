@@ -21,6 +21,7 @@ type PageData =
         id: number;
         site: string;
         externalProblemId: string;
+        shortDescription: string | null;
       }[];
       canEdit: boolean;
     }
@@ -63,6 +64,7 @@ const fetchCollection = cache(async (idParam: string) => {
       id: problems.id,
       site: problems.site,
       externalProblemId: problems.externalProblemId,
+      shortDescription: collectionProblems.shortDescription,
     })
     .from(collectionProblems)
     .innerJoin(problems, eq(problems.id, collectionProblems.problemId))
@@ -188,7 +190,8 @@ export default function CollectionPage() {
             <thead>
               <tr class="border-b border-gray-200 dark:border-gray-700">
                 <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
-                <th class="py-2 font-semibold">{t("problemIdLabel")}</th>
+                <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
+                <th class="py-2 font-semibold">{t("shortDescription")}</th>
               </tr>
             </thead>
             <tbody>
@@ -205,12 +208,13 @@ export default function CollectionPage() {
                         {row.externalProblemId}
                       </A>
                     </td>
+                    <td class="py-2">{row.shortDescription ?? ""}</td>
                   </tr>
                 )}
               </For>
               {(data()?.status === "ok" ? data()!.problems.length : 0) === 0 && (
                 <tr>
-                  <td colSpan={2} class="py-3 text-gray-500 dark:text-gray-400">
+                  <td colSpan={3} class="py-3 text-gray-500 dark:text-gray-400">
                     {t("noProblemsYet")}
                   </td>
                 </tr>

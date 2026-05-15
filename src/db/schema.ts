@@ -199,6 +199,7 @@ export const collectionProblems = sqliteTable(
       .notNull()
       .references(() => problems.id),
     position: integer("position").notNull(),
+    shortDescription: text("short_description"),
   },
   (t) => [
     primaryKey({ columns: [t.collectionId, t.problemId] }),

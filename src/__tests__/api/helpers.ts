@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS collection_problems (
   collection_id INTEGER NOT NULL REFERENCES collections(id),
   problem_id INTEGER NOT NULL REFERENCES problems(id),
   position INTEGER NOT NULL,
+  short_description TEXT,
   PRIMARY KEY (collection_id, problem_id)
 );
 
@@ -209,14 +210,15 @@ export function seedCollectionProblems(
     collectionId: number;
     problemId: number;
     position: number;
+    shortDescription?: string | null;
   }>
 ): void {
   const stmt = sqlite.prepare(
-    `INSERT INTO collection_problems (collection_id, problem_id, position)
-     VALUES (?, ?, ?)`
+    `INSERT INTO collection_problems (collection_id, problem_id, position, short_description)
+     VALUES (?, ?, ?, ?)`
   );
   for (const row of rows) {
-    stmt.run(row.collectionId, row.problemId, row.position);
+    stmt.run(row.collectionId, row.problemId, row.position, row.shortDescription ?? null);
   }
 }
 

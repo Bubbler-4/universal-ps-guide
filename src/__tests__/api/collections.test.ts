@@ -162,7 +162,7 @@ describe("POST /api/collections", () => {
     expect(res.status).toBe(400);
   });
 
-  it("creates a collection and stores ordered problem mappings", async () => {
+  it("creates a collection and stores ordered problem mappings with short descriptions", async () => {
     seedProblems(sqlite, [
       {
         id: 20,
@@ -181,7 +181,10 @@ describe("POST /api/collections", () => {
     const res = await POST(
       makeRequestEvent("http://localhost/api/collections", {
         title: "  My Set  ",
-        problemIds: [21, 20],
+        problems: [
+          { id: 21, shortDescription: "First note" },
+          { id: 20, shortDescription: "  " },
+        ],
       }) as APIEvent
     );
     expect(res.status).toBe(201);
@@ -193,13 +196,13 @@ describe("POST /api/collections", () => {
     const collectionId = body.collection.id as number;
     const links = sqlite
       .prepare(
-        "SELECT problem_id, position FROM collection_problems WHERE collection_id = ? ORDER BY position"
+        "SELECT problem_id, position, short_description FROM collection_problems WHERE collection_id = ? ORDER BY position"
       )
-      .all(collectionId) as Array<{ problem_id: number; position: number }>;
+      .all(collectionId) as Array<{ problem_id: number; position: number; short_description: string | null }>;
 
     expect(links).toEqual([
-      { problem_id: 21, position: 0 },
-      { problem_id: 20, position: 1 },
+      { problem_id: 21, position: 0, short_description: "First note" },
+      { problem_id: 20, position: 1, short_description: null },
     ]);
   });
 });
