@@ -80,10 +80,10 @@ describe("collection problem row drag handle", () => {
       // The row itself must not be draggable; dragging is initiated only via the handle
       expect(row?.getAttribute("draggable")).toBeNull();
       // Pressing the handle must immediately mark the row as dragging (opacity-50)
-      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, button: 0 }));
       await flush();
       expect(row?.classList.contains("opacity-50")).toBe(true);
-      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true }));
       await flush();
       expect(row?.classList.contains("opacity-50")).toBe(false);
     } finally {
@@ -132,10 +132,10 @@ describe("collection problem row drag handle", () => {
       // The row itself must not be draggable; dragging is initiated only via the handle
       expect(row?.getAttribute("draggable")).toBeNull();
       // Pressing the handle must immediately mark the row as dragging (opacity-50)
-      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, button: 0 }));
       await flush();
       expect(row?.classList.contains("opacity-50")).toBe(true);
-      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true }));
       await flush();
       expect(row?.classList.contains("opacity-50")).toBe(false);
     } finally {
@@ -223,15 +223,20 @@ describe("collection problem row drag handle", () => {
         configurable: true,
       });
       try {
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: 10, clientY: 50 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, button: 0, buttons: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, isPrimary: true, buttons: 1, clientX: 10, clientY: 50 }));
         await flush();
 
         expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
 
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true }));
       } finally {
-        Object.defineProperty(document, "elementFromPoint", originalElementFromPoint!);
+        if (originalElementFromPoint) {
+          Object.defineProperty(document, "elementFromPoint", originalElementFromPoint);
+        } else {
+          // elementFromPoint was on the prototype; remove our own-property override
+          delete (document as Record<string, unknown>)["elementFromPoint"];
+        }
       }
     } finally {
       dispose();
@@ -288,15 +293,19 @@ describe("collection problem row drag handle", () => {
         configurable: true,
       });
       try {
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: 10, clientY: 50 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, button: 0, buttons: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, isPrimary: true, buttons: 1, clientX: 10, clientY: 50 }));
         await flush();
 
         expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
 
-        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true }));
       } finally {
-        Object.defineProperty(document, "elementFromPoint", originalElementFromPoint!);
+        if (originalElementFromPoint) {
+          Object.defineProperty(document, "elementFromPoint", originalElementFromPoint);
+        } else {
+          delete (document as Record<string, unknown>)["elementFromPoint"];
+        }
       }
     } finally {
       dispose();
