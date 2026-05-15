@@ -373,6 +373,7 @@ export default function EditCollectionPage() {
                               }}
                               onPointerMove={(event) => {
                                 if (!event.isPrimary) return;
+                                if (event.buttons === 0) return;
                                 if (draggedProblemId() !== problem.id) return;
                                 const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
                                 const rowBelow = elementBelow?.closest<HTMLElement>("[data-problem-id]");
