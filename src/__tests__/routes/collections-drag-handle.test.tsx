@@ -8,8 +8,9 @@ const getProblemIdsInOrder = (container: HTMLDivElement) =>
   Array.from(container.querySelectorAll("tbody tr"))
     .map((row) => row.querySelectorAll("td")[4]?.textContent?.trim() ?? "")
     .filter((value) => value.length > 0);
-const waitForDragHandles = async (container: HTMLDivElement, expectedCount: number) => {
-  for (let i = 0; i < 50; i += 1) {
+const waitForDragHandles = async (container: HTMLDivElement, expectedCount: number, timeoutMs = 4000) => {
+  const start = Date.now();
+  while (Date.now() - start <= timeoutMs) {
     const handles = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button[aria-label="dragToReorderProblems"]'),
     );
@@ -18,7 +19,10 @@ const waitForDragHandles = async (container: HTMLDivElement, expectedCount: numb
     }
     await flush();
   }
-  throw new Error("drag handles not found");
+  const handles = Array.from(
+    container.querySelectorAll<HTMLButtonElement>('button[aria-label="dragToReorderProblems"]'),
+  );
+  throw new Error(`drag handles not found: expected ${expectedCount}, found ${handles.length}`);
 };
 
 describe("collection problem row drag handle", () => {
