@@ -6,6 +6,7 @@ import { moveItemDown, moveItemUp, reorderItems, updateItemById } from "~/lib/co
 import { useI18n } from "~/lib/i18n";
 import { SITES, normalizeProblemId } from "~/lib/problems";
 import { getCloudflareEnv } from "~/server/env";
+import { ProblemSearchInput } from "~/components/ProblemSearchInput";
 
 type AddCollectionData = { status: "ok" } | { status: "server_error" };
 
@@ -96,8 +97,8 @@ export default function AddCollectionPage() {
     });
   };
 
-  const addProblem = async () => {
-    const normalizedId = normalizeProblemId(problemId());
+  const addProblem = async (overrideId?: string) => {
+    const normalizedId = normalizeProblemId(overrideId ?? problemId());
     if (!normalizedId) {
       setError(t("collectionProblemIdRequired"));
       return;
@@ -378,16 +379,17 @@ export default function AddCollectionPage() {
                 <option value={name.toLowerCase()}>{name}</option>
               ))}
             </select>
-            <input
-              type="text"
-              value={problemId()}
-              onInput={(e) => setProblemId(e.currentTarget.value)}
+            <ProblemSearchInput
+              site={site}
+              value={problemId}
+              onInput={setProblemId}
               placeholder={t("problemIdPlaceholder")}
-              class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              mode="collection"
+              onAdd={(id) => addProblem(id)}
             />
             <button
               type="button"
-              onClick={addProblem}
+              onClick={() => addProblem()}
               disabled={addingProblem()}
               class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors"
             >
