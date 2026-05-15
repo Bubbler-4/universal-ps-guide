@@ -14,6 +14,7 @@ type SelectedProblem = {
   id: number;
   site: string;
   externalProblemId: string;
+  shortDescription: string;
 };
 
 type EditCollectionData =
@@ -64,6 +65,7 @@ const fetchCollectionForEdit = cache(async (idParam: string) => {
       id: problems.id,
       site: problems.site,
       externalProblemId: problems.externalProblemId,
+      shortDescription: collectionProblems.shortDescription,
     })
     .from(collectionProblems)
     .innerJoin(problems, eq(problems.id, collectionProblems.problemId))
@@ -76,7 +78,7 @@ const fetchCollectionForEdit = cache(async (idParam: string) => {
     collectionId: collection.id,
     authorId: collection.authorId,
     title: collection.title,
-    problems: rows,
+    problems: rows.map((row) => ({ ...row, shortDescription: row.shortDescription ?? "" })),
   };
 }, "fetchCollectionForEdit");
 
@@ -144,6 +146,12 @@ export default function EditCollectionPage() {
 
   const removeProblem = (id: number) => {
     setSelectedProblems((prev) => prev.filter((problem) => problem.id !== id));
+  };
+
+  const updateProblemShortDescription = (id: number, shortDescription: string) => {
+    setSelectedProblems((prev) =>
+      prev.map((problem) => (problem.id === id ? { ...problem, shortDescription } : problem))
+    );
   };
 
   const reorderProblems = (sourceProblemId: number, targetProblemId: number) => {
@@ -219,6 +227,7 @@ export default function EditCollectionPage() {
           id: problem.id,
           site: problem.site!,
           externalProblemId: problem.externalProblemId!,
+          shortDescription: "",
         },
       ]);
       setProblemId("");
@@ -244,7 +253,10 @@ export default function EditCollectionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: trimmedTitle,
-          problemIds: selectedProblems().map((problem) => problem.id),
+          problems: selectedProblems().map((problem) => ({
+            id: problem.id,
+            shortDescription: problem.shortDescription.trim(),
+          })),
         }),
       });
 
@@ -328,6 +340,7 @@ export default function EditCollectionPage() {
                     </th>
                     <th class="py-2 pr-3 font-semibold">{t("onlineJudgeSiteLabel")}</th>
                     <th class="py-2 pr-3 font-semibold">{t("problemIdLabel")}</th>
+                    <th class="py-2 pr-3 font-semibold">{t("shortDescription")}</th>
                     <th class="py-2 font-semibold">{t("deleteProblem")}</th>
                   </tr>
                 </thead>
@@ -395,6 +408,16 @@ export default function EditCollectionPage() {
                         </td>
                         <td class="py-2 pr-3">{problem.site}</td>
                         <td class="py-2 pr-3">{problem.externalProblemId}</td>
+                        <td class="py-2 pr-3">
+                          <input
+                            type="text"
+                            value={problem.shortDescription}
+                            onInput={(e) => updateProblemShortDescription(problem.id, e.currentTarget.value)}
+                            placeholder={t("shortDescriptionPlaceholder")}
+                            maxlength={200}
+                            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                          />
+                        </td>
                         <td class="py-2">
                           <button
                             type="button"
@@ -409,7 +432,7 @@ export default function EditCollectionPage() {
                   </For>
                   {selectedProblems().length === 0 && (
                     <tr>
-                      <td colSpan={6} class="py-3 text-gray-500 dark:text-gray-400">
+                      <td colSpan={7} class="py-3 text-gray-500 dark:text-gray-400">
                         {t("noProblemsYet")}
                       </td>
                     </tr>

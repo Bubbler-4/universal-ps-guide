@@ -85,7 +85,7 @@ describe("GET /api/collections/:id", () => {
     ]);
     seedCollections(sqlite, [{ id: 100, authorId: 1, title: "My Collection" }]);
     seedCollectionProblems(sqlite, [
-      { collectionId: 100, problemId: 11, position: 0 },
+      { collectionId: 100, problemId: 11, position: 0, shortDescription: "First in order" },
       { collectionId: 100, problemId: 10, position: 1 },
     ]);
 
@@ -99,7 +99,9 @@ describe("GET /api/collections/:id", () => {
     });
     expect(body.problems).toHaveLength(2);
     expect(body.problems[0].id).toBe(11);
+    expect(body.problems[0].shortDescription).toBe("First in order");
     expect(body.problems[1].id).toBe(10);
+    expect(body.problems[1].shortDescription).toBeNull();
   });
 });
 
@@ -145,7 +147,7 @@ describe("PUT /api/collections/:id", () => {
     expect(res.status).toBe(400);
   });
 
-  it("updates title and replaces problem mappings", async () => {
+  it("updates title and replaces problem mappings with short descriptions", async () => {
     seedProblems(sqlite, [
       {
         id: 10,
@@ -172,7 +174,10 @@ describe("PUT /api/collections/:id", () => {
     const res = await PUT(
       makeIdEvent("PUT", "100", {
         title: "  After  ",
-        problemIds: [12, 11],
+        problems: [
+          { id: 12, shortDescription: "QOJ pick" },
+          { id: 11, shortDescription: "" },
+        ],
       }) as APIEvent
     );
     expect(res.status).toBe(200);
@@ -180,11 +185,13 @@ describe("PUT /api/collections/:id", () => {
     expect(body.collection.title).toBe("After");
 
     const rows = sqlite
-      .prepare("SELECT problem_id, position FROM collection_problems WHERE collection_id = 100 ORDER BY position")
-      .all() as Array<{ problem_id: number; position: number }>;
+      .prepare(
+        "SELECT problem_id, position, short_description FROM collection_problems WHERE collection_id = 100 ORDER BY position"
+      )
+      .all() as Array<{ problem_id: number; position: number; short_description: string | null }>;
     expect(rows).toEqual([
-      { problem_id: 12, position: 0 },
-      { problem_id: 11, position: 1 },
+      { problem_id: 12, position: 0, short_description: "QOJ pick" },
+      { problem_id: 11, position: 1, short_description: null },
     ]);
   });
 });

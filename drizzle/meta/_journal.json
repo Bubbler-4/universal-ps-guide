@@ -50,6 +50,13 @@
       "when": 1778416400000,
       "tag": "0006_add_collections",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1778752000000,
+      "tag": "0007_add_collection_problem_short_description",
+      "breakpoints": true
     }
   ]
 }
