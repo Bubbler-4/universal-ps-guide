@@ -77,8 +77,15 @@ describe("collection problem row drag handle", () => {
 
       const row = dragHandle.closest("tr");
       expect(row).toBeTruthy();
+      // The row itself must not be draggable; dragging is initiated only via the handle
       expect(row?.getAttribute("draggable")).toBeNull();
-      expect(dragHandle.getAttribute("draggable")).toBe("true");
+      // Pressing the handle must immediately mark the row as dragging (opacity-50)
+      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      await flush();
+      expect(row?.classList.contains("opacity-50")).toBe(true);
+      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      await flush();
+      expect(row?.classList.contains("opacity-50")).toBe(false);
     } finally {
       dispose();
       container.remove();
@@ -122,8 +129,15 @@ describe("collection problem row drag handle", () => {
 
       const row = dragHandle.closest("tr");
       expect(row).toBeTruthy();
+      // The row itself must not be draggable; dragging is initiated only via the handle
       expect(row?.getAttribute("draggable")).toBeNull();
-      expect(dragHandle.getAttribute("draggable")).toBe("true");
+      // Pressing the handle must immediately mark the row as dragging (opacity-50)
+      dragHandle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      await flush();
+      expect(row?.classList.contains("opacity-50")).toBe(true);
+      dragHandle.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      await flush();
+      expect(row?.classList.contains("opacity-50")).toBe(false);
     } finally {
       dispose();
       container.remove();
@@ -199,35 +213,29 @@ describe("collection problem row drag handle", () => {
 
       expect(getProblemIdsInOrder(container)).toEqual(["1000", "1001"]);
 
-      const setDragImage = vi.fn();
-      const dataTransfer = {
-        setData: vi.fn(),
-        setDragImage,
-        effectAllowed: "",
-      };
-
-      const dragStartEvent = new Event("dragstart", { bubbles: true }) as Event & {
-        dataTransfer?: typeof dataTransfer;
-        clientX?: number;
-        clientY?: number;
-      };
-      dragStartEvent.dataTransfer = dataTransfer;
-      dragStartEvent.clientX = 0;
-      dragStartEvent.clientY = 0;
-      dragHandles[0]!.dispatchEvent(dragStartEvent);
-
       const secondRow = dragHandles[1]!.closest("tr");
       if (!secondRow) throw new Error("second row not found");
 
-      const dragEnterEvent = new Event("dragenter", { bubbles: true }) as Event & {
-        dataTransfer?: typeof dataTransfer;
-      };
-      dragEnterEvent.dataTransfer = dataTransfer;
-      secondRow.dispatchEvent(dragEnterEvent);
-      await flush();
+      Object.defineProperty(document, "elementFromPoint", {
+        value: () => secondRow,
+        writable: true,
+        configurable: true,
+      });
+      try {
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: 10, clientY: 50 }));
+        await flush();
 
-      expect(setDragImage).toHaveBeenCalled();
-      expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+        expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      } finally {
+        Object.defineProperty(document, "elementFromPoint", {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+      }
     } finally {
       dispose();
       container.remove();
@@ -273,35 +281,29 @@ describe("collection problem row drag handle", () => {
 
       expect(getProblemIdsInOrder(container)).toEqual(["1000", "1001"]);
 
-      const setDragImage = vi.fn();
-      const dataTransfer = {
-        setData: vi.fn(),
-        setDragImage,
-        effectAllowed: "",
-      };
-
-      const dragStartEvent = new Event("dragstart", { bubbles: true }) as Event & {
-        dataTransfer?: typeof dataTransfer;
-        clientX?: number;
-        clientY?: number;
-      };
-      dragStartEvent.dataTransfer = dataTransfer;
-      dragStartEvent.clientX = 0;
-      dragStartEvent.clientY = 0;
-      dragHandles[0]!.dispatchEvent(dragStartEvent);
-      expect(setDragImage).toHaveBeenCalledWith(dragHandles[0]!.closest("tr"), 0, 0);
-
       const secondRow = dragHandles[1]!.closest("tr");
       if (!secondRow) throw new Error("second row not found");
 
-      const dragEnterEvent = new Event("dragenter", { bubbles: true }) as Event & {
-        dataTransfer?: typeof dataTransfer;
-      };
-      dragEnterEvent.dataTransfer = dataTransfer;
-      secondRow.dispatchEvent(dragEnterEvent);
-      await flush();
+      Object.defineProperty(document, "elementFromPoint", {
+        value: () => secondRow,
+        writable: true,
+        configurable: true,
+      });
+      try {
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, clientX: 10, clientY: 50 }));
+        await flush();
 
-      expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+        expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+
+        dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      } finally {
+        Object.defineProperty(document, "elementFromPoint", {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+      }
     } finally {
       dispose();
       container.remove();
