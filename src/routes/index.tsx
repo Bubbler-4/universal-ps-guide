@@ -1,4 +1,4 @@
-import { createSignal, For } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { cache, createAsync, redirect, useNavigate } from "@solidjs/router";
 import { cookieStorage, makePersisted } from "@solid-primitives/storage";
@@ -9,6 +9,7 @@ import { useI18n } from "~/lib/i18n";
 import { getDb } from "~/db";
 import { problems, solutions, translations, users } from "~/db/schema";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { ProblemSearchInput } from "~/components/ProblemSearchInput";
 
 type HomeData = {
   recentProblems: {
@@ -189,14 +190,12 @@ export default function Home() {
               <option value={s.toLowerCase()}>{s}</option>
             ))}
           </select>
-          <input
-            id="problem-id-input"
-            type="text"
-            aria-label={t("problemIdLabel")}
+          <ProblemSearchInput
+            site={site}
+            value={problemId}
+            onInput={setProblemId}
             placeholder={t("problemIdPlaceholder")}
-            value={problemId()}
-            onInput={(e) => setProblemId(e.currentTarget.value)}
-            class="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            mode="home"
           />
           <button
             type="submit"
