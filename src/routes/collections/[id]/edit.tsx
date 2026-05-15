@@ -367,11 +367,7 @@ export default function EditCollectionPage() {
                           }}
                           onDrop={(event) => {
                             event.preventDefault();
-                            const sourceProblemId = draggedProblemId();
                             setDraggedProblemId(null);
-                            if (sourceProblemId !== null) {
-                              reorderProblems(sourceProblemId, problem.id);
-                            }
                           }}
                           class="border-b border-gray-100 dark:border-gray-800 last:border-0"
                           classList={{
