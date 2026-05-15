@@ -96,6 +96,11 @@ describe("collection problem row drag handle", () => {
   it("only makes the dedicated handle draggable on the edit collection page", async () => {
     vi.resetModules();
     vi.doMock("@solidjs/router", () => ({
+      A: (props: { href: string; class?: string; children?: unknown }) => (
+        <a href={props.href} class={props.class}>
+          {props.children}
+        </a>
+      ),
       cache: <T extends (...args: never[]) => unknown>(fn: T) => fn,
       createAsync: () => () => ({
         status: "ok",
@@ -248,6 +253,11 @@ describe("collection problem row drag handle", () => {
   it("reorders rows while dragging over another row on the edit collection page", async () => {
     vi.resetModules();
     vi.doMock("@solidjs/router", () => ({
+      A: (props: { href: string; class?: string; children?: unknown }) => (
+        <a href={props.href} class={props.class}>
+          {props.children}
+        </a>
+      ),
       cache: <T extends (...args: never[]) => unknown>(fn: T) => fn,
       createAsync: () => () => ({
         status: "ok",

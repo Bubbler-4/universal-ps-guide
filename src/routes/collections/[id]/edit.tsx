@@ -1,6 +1,6 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
+import { A, cache, createAsync, redirect, useNavigate, useParams } from "@solidjs/router";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { getServerSession } from "~/lib/auth";
 import { moveItemDown, moveItemUp, reorderItems, updateItemById } from "~/lib/collections";
@@ -424,7 +424,11 @@ export default function EditCollectionPage() {
                           </button>
                         </td>
                         <td class="py-2 pr-3">{problem.site}</td>
-                        <td class="py-2 pr-3">{problem.externalProblemId}</td>
+                        <td class="py-2 pr-3">
+                          <A href={`/problems/${problem.site}/${encodeURIComponent(problem.externalProblemId)}`} class="hover:underline">
+                            {problem.externalProblemId}
+                          </A>
+                        </td>
                         <td class="py-2 pr-3">
                           <input
                             type="text"

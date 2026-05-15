@@ -323,7 +323,11 @@ export default function AddCollectionPage() {
                         </button>
                       </td>
                       <td class="py-2 pr-3">{problem.site}</td>
-                      <td class="py-2 pr-3">{problem.externalProblemId}</td>
+                      <td class="py-2 pr-3">
+                        <A href={`/problems/${problem.site}/${encodeURIComponent(problem.externalProblemId)}`} class="hover:underline">
+                          {problem.externalProblemId}
+                        </A>
+                      </td>
                       <td class="py-2 pr-3">
                         <input
                           type="text"
