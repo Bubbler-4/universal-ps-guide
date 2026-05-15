@@ -273,9 +273,10 @@ describe("collection problem row drag handle", () => {
 
       expect(getProblemIdsInOrder(container)).toEqual(["1000", "1001"]);
 
+      const setDragImage = vi.fn();
       const dataTransfer = {
         setData: vi.fn(),
-        setDragImage: vi.fn(),
+        setDragImage,
         effectAllowed: "",
       };
 
@@ -288,6 +289,7 @@ describe("collection problem row drag handle", () => {
       dragStartEvent.clientX = 0;
       dragStartEvent.clientY = 0;
       dragHandles[0]!.dispatchEvent(dragStartEvent);
+      expect(setDragImage).toHaveBeenCalledWith(dragHandles[0]!.closest("tr"), 0, 0);
 
       const secondRow = dragHandles[1]!.closest("tr");
       if (!secondRow) throw new Error("second row not found");
