@@ -351,15 +351,20 @@ export default function EditCollectionPage() {
                       {(problem, index) => (
                         <tr
                           onDragOver={(event) => {
-                            if (draggedProblemId() === null || draggedProblemId() === problem.id) {
+                            event.preventDefault();
+                            if (event.dataTransfer && draggedProblemId() !== null) {
+                              event.dataTransfer.dropEffect = "move";
+                            }
+                          }}
+                          onDragEnter={(event) => {
+                            const sourceProblemId = draggedProblemId();
+                            if (sourceProblemId === null || sourceProblemId === problem.id) {
                               return;
                             }
 
-                          event.preventDefault();
-                          if (event.dataTransfer) {
-                            event.dataTransfer.dropEffect = "move";
-                          }
-                        }}
+                            event.preventDefault();
+                            reorderProblems(sourceProblemId, problem.id);
+                          }}
                           onDrop={(event) => {
                             event.preventDefault();
                             const sourceProblemId = draggedProblemId();
@@ -379,9 +384,18 @@ export default function EditCollectionPage() {
                               draggable={selectedProblems().length > 1}
                               onDragStart={(event) => {
                                 setDraggedProblemId(problem.id);
-                                event.dataTransfer?.setData("text/plain", String(problem.id));
                                 if (event.dataTransfer) {
+                                  event.dataTransfer.setData("text/plain", String(problem.id));
                                   event.dataTransfer.effectAllowed = "move";
+                                  const row = event.currentTarget.closest("tr");
+                                  if (row) {
+                                    const rowRect = row.getBoundingClientRect();
+                                    event.dataTransfer.setDragImage(
+                                      row,
+                                      event.clientX - rowRect.left,
+                                      event.clientY - rowRect.top
+                                    );
+                                  }
                                 }
                               }}
                               onDragEnd={() => setDraggedProblemId(null)}
