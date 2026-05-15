@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveItemDown, moveItemUp, reorderItems } from "~/lib/collections";
+import { moveItemDown, moveItemUp, reorderItems, updateItemById } from "~/lib/collections";
 
 describe("reorderItems", () => {
   it("moves an item earlier in the list", () => {
@@ -48,5 +48,33 @@ describe("moveItemDown", () => {
     const items = [1, 2, 3];
 
     expect(moveItemDown(items, 2)).toBe(items);
+  });
+});
+
+
+describe("updateItemById", () => {
+  it("updates a matching item while preserving object identity", () => {
+    const first = { id: 1, shortDescription: "first" };
+    const second = { id: 2, shortDescription: "second" };
+    const items = [first, second];
+
+    const updated = updateItemById(items, 2, (item) => {
+      item.shortDescription = "changed";
+    });
+
+    expect(updated).not.toBe(items);
+    expect(updated[0]).toBe(first);
+    expect(updated[1]).toBe(second);
+    expect(updated[1]?.shortDescription).toBe("changed");
+  });
+
+  it("returns the original array when no item matches", () => {
+    const items = [{ id: 1, shortDescription: "first" }];
+
+    const updated = updateItemById(items, 99, (item) => {
+      item.shortDescription = "changed";
+    });
+
+    expect(updated).toBe(items);
   });
 });

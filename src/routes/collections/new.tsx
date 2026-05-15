@@ -2,7 +2,7 @@ import { createSignal, For, Show } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { A, cache, createAsync, redirect, useNavigate } from "@solidjs/router";
 import { getServerSession } from "~/lib/auth";
-import { moveItemDown, moveItemUp, reorderItems } from "~/lib/collections";
+import { moveItemDown, moveItemUp, reorderItems, updateItemById } from "~/lib/collections";
 import { useI18n } from "~/lib/i18n";
 import { SITES, normalizeProblemId } from "~/lib/problems";
 import { getCloudflareEnv } from "~/server/env";
@@ -63,7 +63,9 @@ export default function AddCollectionPage() {
 
   const updateProblemShortDescription = (id: number, shortDescription: string) => {
     setSelectedProblems((prev) =>
-      prev.map((problem) => (problem.id === id ? { ...problem, shortDescription } : problem))
+      updateItemById(prev, id, (problem) => {
+        problem.shortDescription = shortDescription;
+      })
     );
   };
 

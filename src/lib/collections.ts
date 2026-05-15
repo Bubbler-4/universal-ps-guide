@@ -22,3 +22,18 @@ export function moveItemUp<T>(items: T[], index: number): T[] {
 export function moveItemDown<T>(items: T[], index: number): T[] {
   return reorderItems(items, index, index + 1);
 }
+
+export function updateItemById<T extends { id: number }>(
+  items: T[],
+  id: number,
+  update: (item: T) => void
+): T[] {
+  const index = items.findIndex((item) => item.id === id);
+  if (index < 0) {
+    return items;
+  }
+
+  const updated = [...items];
+  update(updated[index]!);
+  return updated;
+}
