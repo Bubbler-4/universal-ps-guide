@@ -98,7 +98,7 @@ export default function AddCollectionPage() {
   };
 
   const addProblem = async (overrideId?: string) => {
-    const normalizedId = overrideId ?? normalizeProblemId(problemId());
+    const normalizedId = normalizeProblemId(overrideId ?? problemId());
     if (!normalizedId) {
       setError(t("collectionProblemIdRequired"));
       return;

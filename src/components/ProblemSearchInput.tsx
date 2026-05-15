@@ -36,6 +36,7 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
   const [showSuggestions, setShowSuggestions] = createSignal(false);
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let searchAbortController: AbortController | undefined;
 
   const fetchSuggestions = (value: string, currentSite: string) => {
     clearTimeout(debounceTimer);
@@ -47,18 +48,36 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
       return;
     }
     debounceTimer = setTimeout(async () => {
+      // Abort any previous request
+      if (searchAbortController) {
+        searchAbortController.abort();
+      }
+      searchAbortController = new AbortController();
+      const controller = searchAbortController;
+
       try {
         const res = await fetch(
-          `/api/problems/search?site=${encodeURIComponent(currentSite)}&prefix=${encodeURIComponent(normalized)}`
+          `/api/problems/search?site=${encodeURIComponent(currentSite)}&prefix=${encodeURIComponent(normalized)}`,
+          { signal: controller.signal }
         );
         if (res.ok) {
           const body = (await res.json()) as SearchResult;
-          setSuggestions(body.matches ?? []);
-          setHasExactMatch(body.hasExactMatch ?? false);
-          setShowSuggestions(true);
+          // Only update state if this request wasn't aborted
+          if (!controller.signal.aborted) {
+            setSuggestions(body.matches ?? []);
+            setHasExactMatch(body.hasExactMatch ?? false);
+            setShowSuggestions(true);
+          }
+        } else if (!controller.signal.aborted) {
+          setSuggestions([]);
+          setHasExactMatch(false);
         }
-      } catch {
-        // Ignore fetch errors silently
+      } catch (err) {
+        // Only clear state if the request wasn't aborted
+        if (!controller.signal.aborted) {
+          setSuggestions([]);
+          setHasExactMatch(false);
+        }
       }
     }, 200);
   };
@@ -80,7 +99,10 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
         }}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         onFocus={() => {
-          if (suggestions().length > 0 || normalizedInput()) {
+          const currentNormalized = normalizedInput();
+          if (currentNormalized) {
+            fetchSuggestions(props.value(), props.site());
+          } else if (suggestions().length > 0) {
             setShowSuggestions(true);
           }
         }}
