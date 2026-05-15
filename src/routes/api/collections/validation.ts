@@ -59,3 +59,25 @@ export function parseCollectionProblems(
 
   return { valid: true, problems: parsed };
 }
+
+export function parseProblemsFromBody(
+  rawProblems: unknown,
+  rawProblemIds: unknown
+): { valid: true; problems: ParsedCollectionProblem[] } | { valid: false } {
+  if (rawProblems !== undefined) {
+    return parseCollectionProblems(rawProblems);
+  }
+
+  const parsedProblemIds = parseProblemIds(rawProblemIds);
+  if (!parsedProblemIds.valid) {
+    return { valid: false };
+  }
+
+  return {
+    valid: true,
+    problems: parsedProblemIds.problemIds.map((id) => ({
+      id,
+      shortDescription: null,
+    })),
+  };
+}

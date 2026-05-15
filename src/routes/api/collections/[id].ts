@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-import { MAX_COLLECTION_PROBLEMS, parseCollectionProblems, parseProblemIds } from "./validation";
+import { MAX_COLLECTION_PROBLEMS, parseProblemsFromBody } from "./validation";
 
 /**
  * GET /api/collections/:id
@@ -104,19 +104,7 @@ export async function PUT(event: APIEvent) {
     });
   }
 
-  const parsedProblems =
-    rawProblems !== undefined
-      ? parseCollectionProblems(rawProblems)
-      : (() => {
-          const parsedProblemIds = parseProblemIds(rawProblemIds);
-          if (!parsedProblemIds.valid) {
-            return { valid: false } as const;
-          }
-          return {
-            valid: true as const,
-            problems: parsedProblemIds.problemIds.map((id) => ({ id, shortDescription: null })),
-          };
-        })();
+  const parsedProblems = parseProblemsFromBody(rawProblems, rawProblemIds);
   if (!parsedProblems.valid) {
     return new Response(
       JSON.stringify({
