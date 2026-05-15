@@ -197,12 +197,6 @@ export default function Home() {
             placeholder={t("problemIdPlaceholder")}
             mode="home"
           />
-          <button
-            type="submit"
-            class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
-          >
-            {t("search")}
-          </button>
         </form>
       </div>
       <div class="mt-12 grid grid-cols-1 xl:grid-cols-3 gap-6">

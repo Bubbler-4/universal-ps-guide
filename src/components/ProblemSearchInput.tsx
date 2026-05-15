@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { normalizeProblemId } from "~/lib/problems";
 import { useI18n } from "~/lib/i18n";
 
@@ -30,6 +31,7 @@ type ProblemSearchInputProps = {
  *  - If no matches at all, a "No matching problems" row is shown.
  */
 export function ProblemSearchInput(props: ProblemSearchInputProps) {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const [hasExactMatch, setHasExactMatch] = createSignal(false);
@@ -87,6 +89,15 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
   const problemHref = (id: string) =>
     `/problems/${props.site().toLowerCase()}/${encodeURIComponent(id)}`;
 
+  const handleSuggestionRowClick = (id: string) => {
+    setShowSuggestions(false);
+    if (props.mode === "collection") {
+      props.onAdd?.(id);
+      return;
+    }
+    navigate(problemHref(id));
+  };
+
   return (
     <div class="flex-1 relative">
       <input
@@ -112,7 +123,23 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
         <div class="absolute left-0 right-0 top-full mt-1 z-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
           <For each={suggestions()}>
             {(id) => (
-              <div class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-0">
+              <div
+                class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer"
+                onClick={() => handleSuggestionRowClick(id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSuggestionRowClick(id);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={
+                  props.mode === "collection"
+                    ? `${t("searchSuggestionAdd")} ${id}`
+                    : `${t("searchSuggestionView")} ${id}`
+                }
+              >
                 <span class="text-sm text-gray-800 dark:text-gray-200 font-mono">{id}</span>
                 <Show
                   when={props.mode === "collection"}
@@ -120,7 +147,10 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
                     <a
                       href={problemHref(id)}
                       class="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2 shrink-0"
-                      onClick={() => setShowSuggestions(false)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSuggestions(false);
+                      }}
                     >
                       {t("searchSuggestionView")}
                     </a>
@@ -129,7 +159,8 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
                   <button
                     type="button"
                     class="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2 shrink-0"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setShowSuggestions(false);
                       props.onAdd?.(id);
                     }}
