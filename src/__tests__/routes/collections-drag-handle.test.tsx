@@ -216,6 +216,7 @@ describe("collection problem row drag handle", () => {
       const secondRow = dragHandles[1]!.closest("tr");
       if (!secondRow) throw new Error("second row not found");
 
+      const originalElementFromPoint = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
       Object.defineProperty(document, "elementFromPoint", {
         value: () => secondRow,
         writable: true,
@@ -230,11 +231,7 @@ describe("collection problem row drag handle", () => {
 
         dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
       } finally {
-        Object.defineProperty(document, "elementFromPoint", {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
+        Object.defineProperty(document, "elementFromPoint", originalElementFromPoint!);
       }
     } finally {
       dispose();
@@ -284,6 +281,7 @@ describe("collection problem row drag handle", () => {
       const secondRow = dragHandles[1]!.closest("tr");
       if (!secondRow) throw new Error("second row not found");
 
+      const originalElementFromPoint = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
       Object.defineProperty(document, "elementFromPoint", {
         value: () => secondRow,
         writable: true,
@@ -298,11 +296,7 @@ describe("collection problem row drag handle", () => {
 
         dragHandles[0]!.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
       } finally {
-        Object.defineProperty(document, "elementFromPoint", {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
+        Object.defineProperty(document, "elementFromPoint", originalElementFromPoint!);
       }
     } finally {
       dispose();

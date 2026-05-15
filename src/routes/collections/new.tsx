@@ -260,6 +260,7 @@ export default function AddCollectionPage() {
                         <button
                           type="button"
                           onPointerDown={(event) => {
+                            if (!event.isPrimary || event.button !== 0) return;
                             if (selectedProblems().length <= 1) return;
                             try {
                               event.currentTarget.setPointerCapture(event.pointerId);
@@ -270,6 +271,7 @@ export default function AddCollectionPage() {
                             setDraggedProblemId(problem.id);
                           }}
                           onPointerMove={(event) => {
+                            if (!event.isPrimary || (event.buttons & 1) === 0) return;
                             if (draggedProblemId() !== problem.id) return;
                             const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
                             const rowBelow = elementBelow?.closest<HTMLElement>("[data-problem-id]");
