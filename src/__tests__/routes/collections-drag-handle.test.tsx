@@ -228,6 +228,15 @@ describe("collection problem row drag handle", () => {
 
       expect(setDragImage).toHaveBeenCalled();
       expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+
+      const dropEvent = new Event("drop", { bubbles: true }) as Event & {
+        dataTransfer?: typeof dataTransfer;
+      };
+      dropEvent.dataTransfer = dataTransfer;
+      secondRow.dispatchEvent(dropEvent);
+      await flush();
+
+      expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
     } finally {
       dispose();
       container.remove();
@@ -299,6 +308,15 @@ describe("collection problem row drag handle", () => {
       };
       dragEnterEvent.dataTransfer = dataTransfer;
       secondRow.dispatchEvent(dragEnterEvent);
+      await flush();
+
+      expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
+
+      const dropEvent = new Event("drop", { bubbles: true }) as Event & {
+        dataTransfer?: typeof dataTransfer;
+      };
+      dropEvent.dataTransfer = dataTransfer;
+      secondRow.dispatchEvent(dropEvent);
       await flush();
 
       expect(getProblemIdsInOrder(container)).toEqual(["1001", "1000"]);
