@@ -54,7 +54,6 @@ export default function AddCollectionPage() {
   const [problemId, setProblemId] = createSignal("");
   const [selectedProblems, setSelectedProblems] = createSignal<SelectedProblem[]>([]);
   const [draggedProblemId, setDraggedProblemId] = createSignal<number | null>(null);
-  const [, setAddingProblem] = createSignal(false);
   const [submitting, setSubmitting] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
@@ -104,7 +103,6 @@ export default function AddCollectionPage() {
       return;
     }
 
-    setAddingProblem(true);
     setError(null);
     try {
       const res = await fetch(`/api/problems/${site()}/${encodeURIComponent(normalizedId)}`);
@@ -149,8 +147,6 @@ export default function AddCollectionPage() {
       setProblemId("");
     } catch {
       setError(t("networkError"));
-    } finally {
-      setAddingProblem(false);
     }
   };
 

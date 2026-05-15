@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { normalizeProblemId } from "~/lib/problems";
 import { useI18n } from "~/lib/i18n";
 
@@ -30,6 +31,7 @@ type ProblemSearchInputProps = {
  *  - If no matches at all, a "No matching problems" row is shown.
  */
 export function ProblemSearchInput(props: ProblemSearchInputProps) {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const [hasExactMatch, setHasExactMatch] = createSignal(false);
@@ -93,7 +95,7 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
       props.onAdd?.(id);
       return;
     }
-    window.location.href = problemHref(id);
+    navigate(problemHref(id));
   };
 
   return (
@@ -124,6 +126,19 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
               <div
                 class="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer"
                 onClick={() => handleSuggestionRowClick(id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSuggestionRowClick(id);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={
+                  props.mode === "collection"
+                    ? `${t("searchSuggestionAdd")} ${id}`
+                    : `${t("searchSuggestionView")} ${id}`
+                }
               >
                 <span class="text-sm text-gray-800 dark:text-gray-200 font-mono">{id}</span>
                 <Show
