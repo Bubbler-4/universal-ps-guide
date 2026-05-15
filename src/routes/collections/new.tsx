@@ -249,14 +249,6 @@ export default function AddCollectionPage() {
                 <For each={selectedProblems()}>
                   {(problem, index) => (
                     <tr
-                      draggable={selectedProblems().length > 1}
-                      onDragStart={(event) => {
-                        setDraggedProblemId(problem.id);
-                        event.dataTransfer?.setData("text/plain", String(problem.id));
-                        if (event.dataTransfer) {
-                          event.dataTransfer.effectAllowed = "move";
-                        }
-                      }}
                       onDragOver={(event) => {
                         if (draggedProblemId() === null || draggedProblemId() === problem.id) {
                           return;
@@ -275,15 +267,31 @@ export default function AddCollectionPage() {
                           reorderProblems(sourceProblemId, problem.id);
                         }
                       }}
-                      onDragEnd={() => setDraggedProblemId(null)}
                       class="border-b border-gray-100 dark:border-gray-800 last:border-0"
                       classList={{
                         "opacity-50": draggedProblemId() === problem.id,
-                        "cursor-grab active:cursor-grabbing": selectedProblems().length > 1,
                       }}
                     >
-                      <td class="py-2 pr-3 text-gray-400 dark:text-gray-500 select-none" aria-label={t("dragToReorderProblems")}>
-                        <span aria-hidden="true">⋮⋮</span>
+                      <td class="py-2 pr-3 text-gray-400 dark:text-gray-500 select-none">
+                        <button
+                          type="button"
+                          draggable={selectedProblems().length > 1}
+                          onDragStart={(event) => {
+                            setDraggedProblemId(problem.id);
+                            event.dataTransfer?.setData("text/plain", String(problem.id));
+                            if (event.dataTransfer) {
+                              event.dataTransfer.effectAllowed = "move";
+                            }
+                          }}
+                          onDragEnd={() => setDraggedProblemId(null)}
+                          aria-label={t("dragToReorderProblems")}
+                          class="inline-flex"
+                          classList={{
+                            "cursor-grab active:cursor-grabbing": selectedProblems().length > 1,
+                          }}
+                        >
+                          <span aria-hidden="true">⋮⋮</span>
+                        </button>
                       </td>
                       <td class="py-2 pr-3 text-center">
                         <button
