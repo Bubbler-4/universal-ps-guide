@@ -205,4 +205,40 @@ describe("POST /api/collections", () => {
       { problem_id: 20, position: 1, short_description: null },
     ]);
   });
+
+  it("creates a collection with many problems (chunked INSERT)", async () => {
+    // Seed 26 problems — with 4 columns each, a single INSERT would need
+    // 26 * 4 = 104 bound parameters, exceeding D1's 100-parameter limit.
+    const problemCount = 26;
+    seedProblems(
+      sqlite,
+      Array.from({ length: problemCount }, (_, i) => ({
+        id: i + 1,
+        site: "codeforces",
+        externalProblemId: `P${i + 1}`,
+        externalProblemLink: `https://codeforces.com/problemset/problem/${i + 1}/A`,
+      }))
+    );
+
+    const res = await POST(
+      makeRequestEvent("http://localhost/api/collections", {
+        title: "Big Set",
+        problems: Array.from({ length: problemCount }, (_, i) => ({ id: i + 1 })),
+      }) as APIEvent
+    );
+    expect(res.status).toBe(201);
+
+    const body = await res.json();
+    const collectionId = body.collection.id as number;
+    const links = sqlite
+      .prepare(
+        "SELECT problem_id, position FROM collection_problems WHERE collection_id = ? ORDER BY position"
+      )
+      .all(collectionId) as Array<{ problem_id: number; position: number }>;
+
+    expect(links).toHaveLength(problemCount);
+    for (let i = 0; i < problemCount; i++) {
+      expect(links[i]).toEqual({ problem_id: i + 1, position: i });
+    }
+  });
 });
