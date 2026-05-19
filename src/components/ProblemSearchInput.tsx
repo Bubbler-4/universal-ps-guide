@@ -98,6 +98,11 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
     navigate(problemHref(id));
   };
 
+  const handleCreateRowClick = () => {
+    setShowSuggestions(false);
+    navigate(problemHref(normalizedInput()));
+  };
+
   return (
     <div class="flex-1 relative">
       <input
@@ -172,7 +177,19 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
             )}
           </For>
           <Show when={props.mode === "home" && !hasExactMatch()}>
-            <div class="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            <div
+              class="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer"
+              onClick={handleCreateRowClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleCreateRowClick();
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`${t("searchSuggestionCreate")} ${normalizedInput()}`}
+            >
               <span class="text-sm text-blue-700 dark:text-blue-300">
                 {t("searchSuggestionCreateDesc")}:{" "}
                 <span class="font-mono">{normalizedInput()}</span>
@@ -180,7 +197,10 @@ export function ProblemSearchInput(props: ProblemSearchInputProps) {
               <a
                 href={problemHref(normalizedInput())}
                 class="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2 shrink-0"
-                onClick={() => setShowSuggestions(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSuggestions(false);
+                }}
               >
                 {t("searchSuggestionCreate")}
               </a>
