@@ -189,7 +189,6 @@ export async function PUT(event: APIEvent) {
         ]
       : []),
   ];
-  console.log(replaceQueries.map(query => query.toSQL()));
 
   if ("batch" in db && typeof db.batch === "function") {
     await db.batch(replaceQueries);
