@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-import { MAX_COLLECTION_PROBLEMS, parseProblemsFromBody } from "./validation";
+import { COLLECTION_PROBLEM_INSERT_CHUNK_SIZE, MAX_COLLECTION_PROBLEMS, chunkArray, parseProblemsFromBody } from "./validation";
 
 /**
  * GET /api/collections/:id
@@ -170,24 +170,22 @@ export async function PUT(event: APIEvent) {
     }
   }
 
+  const insertValues = collectionProblemData.map((problem, index) => ({
+    collectionId: id,
+    problemId: problem.id,
+    position: index,
+    shortDescription: problem.shortDescription,
+  }));
+
   const replaceQueries = [
     db
       .update(collections)
       .set({ title: title.trim(), updatedAt: sql`(datetime('now'))` })
       .where(and(eq(collections.id, id), eq(collections.authorId, session.dbUserId), isNull(collections.deletedAt))),
     db.delete(collectionProblems).where(eq(collectionProblems.collectionId, id)),
-    ...(problemIds.length > 0
-      ? [
-          db.insert(collectionProblems).values(
-            collectionProblemData.map((problem, index) => ({
-              collectionId: id,
-              problemId: problem.id,
-              position: index,
-              shortDescription: problem.shortDescription,
-            }))
-          ),
-        ]
-      : []),
+    ...chunkArray(insertValues, COLLECTION_PROBLEM_INSERT_CHUNK_SIZE).map((chunk) =>
+      db.insert(collectionProblems).values(chunk)
+    ),
   ];
 
   if ("batch" in db && typeof db.batch === "function") {

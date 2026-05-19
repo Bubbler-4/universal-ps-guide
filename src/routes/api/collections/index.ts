@@ -4,7 +4,7 @@ import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
 import { getD1 } from "~/server/db";
 import { getServerSession } from "~/lib/auth";
 import { getCloudflareEnv } from "~/server/env";
-import { MAX_COLLECTION_PROBLEMS, parseProblemsFromBody } from "./validation";
+import { COLLECTION_PROBLEM_INSERT_CHUNK_SIZE, MAX_COLLECTION_PROBLEMS, chunkArray, parseProblemsFromBody } from "./validation";
 
 /**
  * GET /api/collections
@@ -142,17 +142,15 @@ export async function POST(event: APIEvent) {
 
   try {
     if (problemIds.length > 0) {
-      await db
-        .insert(collectionProblems)
-        .values(
-          collectionProblemData.map((problem, index) => ({
-            collectionId: collection.id,
-            problemId: problem.id,
-            position: index,
-            shortDescription: problem.shortDescription,
-          }))
-        )
-        .run();
+      const insertValues = collectionProblemData.map((problem, index) => ({
+        collectionId: collection.id,
+        problemId: problem.id,
+        position: index,
+        shortDescription: problem.shortDescription,
+      }));
+      for (const chunk of chunkArray(insertValues, COLLECTION_PROBLEM_INSERT_CHUNK_SIZE)) {
+        await db.insert(collectionProblems).values(chunk).run();
+      }
     }
   } catch {
     await db.delete(collections).where(eq(collections.id, collection.id)).run().catch(() => undefined);
