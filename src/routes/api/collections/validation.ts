@@ -1,6 +1,22 @@
 export const MAX_COLLECTION_PROBLEMS = 100;
 export const MAX_COLLECTION_PROBLEM_DESCRIPTION_LENGTH = 200;
 
+/**
+ * Maximum rows per INSERT statement, chosen so that
+ * (COLLECTION_PROBLEM_COLUMNS * COLLECTION_PROBLEM_INSERT_CHUNK_SIZE) ≤ D1's 100-parameter limit.
+ * collection_problems has 4 columns, so 20 rows × 4 = 80 parameters per statement.
+ */
+export const COLLECTION_PROBLEM_INSERT_CHUNK_SIZE = 20;
+
+/** Split an array into consecutive chunks of at most `size` elements. */
+export function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 export type ParsedCollectionProblem = {
   id: number;
   shortDescription: string | null;

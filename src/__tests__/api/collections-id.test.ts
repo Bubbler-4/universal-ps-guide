@@ -194,6 +194,42 @@ describe("PUT /api/collections/:id", () => {
       { problem_id: 11, position: 1, short_description: null },
     ]);
   });
+
+  it("handles editing a collection with many problems (chunked INSERT)", async () => {
+    // Seed 26 problems — with 4 columns each, a single INSERT would need
+    // 26 * 4 = 104 bound parameters, exceeding D1's 100-parameter limit.
+    const problemCount = 26;
+    seedProblems(
+      sqlite,
+      Array.from({ length: problemCount }, (_, i) => ({
+        id: i + 1,
+        site: "codeforces",
+        externalProblemId: `P${i + 1}`,
+        externalProblemLink: `https://codeforces.com/problemset/problem/${i + 1}/A`,
+      }))
+    );
+    seedCollections(sqlite, [{ id: 100, authorId: 1, title: "Before" }]);
+
+    const res = await PUT(
+      makeIdEvent("PUT", "100", {
+        title: "Many Problems",
+        problems: Array.from({ length: problemCount }, (_, i) => ({ id: i + 1 })),
+      }) as APIEvent
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.collection.title).toBe("Many Problems");
+
+    const rows = sqlite
+      .prepare(
+        "SELECT problem_id, position FROM collection_problems WHERE collection_id = 100 ORDER BY position"
+      )
+      .all() as Array<{ problem_id: number; position: number }>;
+    expect(rows).toHaveLength(problemCount);
+    for (let i = 0; i < problemCount; i++) {
+      expect(rows[i]).toEqual({ problem_id: i + 1, position: i });
+    }
+  });
 });
 
 describe("DELETE /api/collections/:id", () => {
